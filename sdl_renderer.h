@@ -8,7 +8,7 @@
 /* macros */
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 640
-#define WINDOW_TITLE "Hello from SDL2"
+#define WINDOW_TITLE "Tetris on SDL2"
 
 /* variables */
 static SDL_Window* window;

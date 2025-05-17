@@ -1,42 +1,122 @@
+#include <time.h>
+#include <stdlib.h>
 #include "sdl_renderer.h"
 
 static bool running;
 
-void draw_peace(
+#define SCREEN_X 8
+#define SCREEN_Y 16
+
+bool ONE_DEFINITION[1] = {true};
+bool FOUR_DEFINITION[4] = {true, true, true, true};
+bool G_BAR_DEFINITION[6] = {true, true, true, true, false, false};
+
+struct Piece {
+    char size_x;
+    char size_y;
+    bool *definition;
+};
+
+struct Piece g_bar = {2, 3, (bool *) G_BAR_DEFINITION};
+struct Piece square = {2, 2, (bool *) FOUR_DEFINITION};
+struct Piece bar = {1, 4, (bool *) FOUR_DEFINITION};
+struct Piece bar_2 = {4, 1, (bool *) FOUR_DEFINITION};
+
+
+bool can_place_piece(
     bool *screen,
     char x,
     char y,
-    char size_x,
-    char size_y,
-    bool *peace
+    struct Piece piece
 ) {
-    for (int i = 0; i < size_x; ++i) {
-        for (int j = 0; j < size_y; ++j) {
-	    *(screen + (x + i) * 16 + (y + j)) = *(peace + i * size_y + j);
+    for (int i = 0; i < piece.size_x; ++i) {
+        for (int j = 0; j < piece.size_y; ++j) {
+	    if (x + i >= SCREEN_X || y + j >= SCREEN_Y) {
+                return false;
+	    }
+	    if (*(screen + (x + i) * SCREEN_Y + (y + j)) && *(piece.definition + i * piece.size_y + j)) {
+	    	return false;
+	    }
+	}
+    }
+    return true;
+}
+
+void place_piece(
+    bool *screen,
+    char x,
+    char y,
+    struct Piece piece
+) {
+    for (int i = 0; i < piece.size_x; ++i) {
+        for (int j = 0; j < piece.size_y; ++j) {
+	    *(screen + (x + i) * SCREEN_Y + (y + j)) = *(piece.definition + i * piece.size_y + j);
 	}
     }
 }
 
-bool dot[1] = {true};
-bool square[2][2] = {true, true, true, true};
-bool bar[1][4] = {true, true, true, true};
-bool g_bar[2][3] = {true, true, true, true, false, false};
+void game_over(
+    bool *screen,
+    bool *board
+) {
+    for (int y = 0; y < SCREEN_Y; ++y) {
+        for (int x = 0; x < SCREEN_X; ++x) {
+            *(screen + x * SCREEN_Y + y) = true;
+        }
+
+        renderer_render((bool *) screen);
+        renderer_delay(100);
+    }
+
+    for (int y = SCREEN_Y - 1; y >= 0; --y) {
+        for (int x = 0; x < SCREEN_X; ++x) {
+            *(screen + x * SCREEN_Y + y) = false;
+            *(board + x * SCREEN_Y + y) = false;
+        }
+
+        renderer_render((bool *) screen);
+        renderer_delay(100);
+    }
+}
 
 int main(int argc, char** argv) {
     renderer_init();
     running = true;
 
-    bool board[8][16] = {0};
-    bool screen[8][16];
+    bool board[SCREEN_X][SCREEN_Y];
+    bool screen[SCREEN_X][SCREEN_Y];
 
-    char i = 0;
+    for (int x = 0; x < SCREEN_X; ++x) {
+        for (int y = 0; y < SCREEN_Y; ++y) {
+	    board[x][y] = false;
+	}
+    }
+
+    srand(time(NULL));
+
+    struct Piece pieces[4] = {square, bar, bar_2, g_bar};
+    char piece_number = rand() % 4;
+    struct Piece current_piece = pieces[piece_number];
+    char current_piece_y = -1;
     while (running) {
         running = renderer_running();
 
-	memcpy(screen, board, 8 * 16 * sizeof(bool)); 
+	memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool)); 
 
-	draw_peace((bool *) screen, 3, i, 2, 3, (bool *) g_bar);
-	if (++i == 16) i = 0;
+	if (can_place_piece((bool *) screen, 3, current_piece_y + 1, current_piece)) {
+	    place_piece((bool *) screen, 3, current_piece_y + 1, current_piece);
+	    current_piece_y++;
+	} else {
+	    if (current_piece_y >= 0) {
+	        place_piece((bool *) screen, 3, current_piece_y, current_piece);
+	        memcpy(board, screen, SCREEN_X * SCREEN_Y * sizeof(bool));
+	    } else {
+	        game_over((bool *) screen, (bool *) board);
+	    }
+	    piece_number = rand() % 4;
+            current_piece = pieces[piece_number];
+	    current_piece_y = -1;
+	}
 
 	renderer_delay(300);
 
