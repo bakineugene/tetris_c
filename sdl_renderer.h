@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "events.h"
 
 #define SDL_MAIN_HANDLED
 #include "SDL2/SDL.h"
@@ -15,14 +16,27 @@ static SDL_Window* window;
 static SDL_Renderer* renderer;
 static SDL_Event event;
 
-bool renderer_running(void) {
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_QUIT) {
-            return false;
-        }
+enum Event renderer_get_event() {
+    if (SDL_PollEvent(&event)) {
+	switch(event.type) {
+	    case SDL_QUIT:
+                return EVENT_EXIT;
+            case SDL_KEYDOWN:
+		switch (event.key.keysym.sym) {
+	            case SDLK_LEFT:
+                        return EVENT_LEFT;
+	            case SDLK_RIGHT:
+                        return EVENT_RIGHT;
+	            case SDLK_DOWN:
+                        return EVENT_DOWN;
+	            case SDLK_UP:
+                        return EVENT_UP;
+	            case SDLK_SPACE:
+                        return EVENT_SPACE;
+	        }
+          }
     }
-
-    return true;
+    return EVENT_EMPTY;
 }
 
 int renderer_init(void) {

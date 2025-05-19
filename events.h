@@ -1,0 +1,9 @@
+enum Event {
+    EVENT_EMPTY,
+    EVENT_EXIT,
+    EVENT_LEFT,
+    EVENT_RIGHT,
+    EVENT_UP,
+    EVENT_DOWN,
+    EVENT_SPACE
+};

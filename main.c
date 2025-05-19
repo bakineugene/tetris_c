@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "sdl_renderer.h"
 
-static bool running;
-
 #define SCREEN_X 8
 #define SCREEN_Y 16
 
@@ -22,7 +20,6 @@ struct Piece square = {2, 2, (bool *) FOUR_DEFINITION};
 struct Piece bar = {1, 4, (bool *) FOUR_DEFINITION};
 struct Piece bar_2 = {4, 1, (bool *) FOUR_DEFINITION};
 
-
 bool can_place_piece(
     bool *screen,
     char x,
@@ -31,13 +28,15 @@ bool can_place_piece(
 ) {
     for (int i = 0; i < piece.size_x; ++i) {
         for (int j = 0; j < piece.size_y; ++j) {
-	    if (x + i >= SCREEN_X || y + j >= SCREEN_Y) {
-                return false;
+            if (*(piece.definition + i * piece.size_y + j)) { 
+                if (x + i >= SCREEN_X || x + i < 0 || y + j >= SCREEN_Y) {
+                    return false;
+                }
+                if (*(screen + (x + i) * SCREEN_Y + (y + j))) {
+                    return false;
+                }
+            }
 	    }
-	    if (*(screen + (x + i) * SCREEN_Y + (y + j)) && *(piece.definition + i * piece.size_y + j)) {
-	    	return false;
-	    }
-	}
     }
     return true;
 }
@@ -50,8 +49,8 @@ void place_piece(
 ) {
     for (int i = 0; i < piece.size_x; ++i) {
         for (int j = 0; j < piece.size_y; ++j) {
-	    *(screen + (x + i) * SCREEN_Y + (y + j)) = *(piece.definition + i * piece.size_y + j);
-	}
+            *(screen + (x + i) * SCREEN_Y + (y + j)) = *(screen + (x + i) * SCREEN_Y + (y + j)) || *(piece.definition + i * piece.size_y + j);
+        }
     }
 }
 
@@ -79,9 +78,12 @@ void game_over(
     }
 }
 
+static int game_time = 0;
+static bool running = true;
+static char piece_position_x = 3;
+
 int main(int argc, char** argv) {
     renderer_init();
-    running = true;
 
     bool board[SCREEN_X][SCREEN_Y];
     bool screen[SCREEN_X][SCREEN_Y];
@@ -99,28 +101,56 @@ int main(int argc, char** argv) {
     struct Piece current_piece = pieces[piece_number];
     char current_piece_y = -1;
     while (running) {
-        running = renderer_running();
+        enum Event event = EVENT_EMPTY;
+        do {
+            event = renderer_get_event();
+                switch(event) {
+                    case EVENT_EXIT:
+                    running = false;
+                        break;
+                    case EVENT_LEFT:
+                        if (can_place_piece((bool *) board, piece_position_x - 1, current_piece_y, current_piece))
+                            --piece_position_x;
+                        break;
+                    case EVENT_RIGHT:
+                        if (can_place_piece((bool *) board, piece_position_x + 1, current_piece_y, current_piece))
+                            ++piece_position_x;
+                        break;
+                    case EVENT_DOWN:
+                        if (can_place_piece((bool *) board, piece_position_x, current_piece_y + 1, current_piece))
+                            ++current_piece_y;
+                        break;
+                    case EVENT_UP:
+                        break;
+                    case EVENT_SPACE:
+                        break;
+                }
+        } while (event != EVENT_EMPTY);
 
-	memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool)); 
+        if (game_time == 300) {
+            game_time = 0;
+            memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool)); 
+            if (can_place_piece((bool *) screen, piece_position_x, current_piece_y + 1, current_piece)) {
+                place_piece((bool *) screen, piece_position_x, current_piece_y + 1, current_piece);
+                current_piece_y++;
+            } else {
+                if (current_piece_y >= 0) {
+                    place_piece((bool *) screen, piece_position_x, current_piece_y, current_piece);
+                    memcpy(board, screen, SCREEN_X * SCREEN_Y * sizeof(bool));
+                } else {
+                    game_over((bool *) screen, (bool *) board);
+                }
+                piece_number = rand() % 4;
+                current_piece = pieces[piece_number];
+                current_piece_y = -1;
+                piece_position_x = 3;
+            }
+        }
 
-	if (can_place_piece((bool *) screen, 3, current_piece_y + 1, current_piece)) {
-	    place_piece((bool *) screen, 3, current_piece_y + 1, current_piece);
-	    current_piece_y++;
-	} else {
-	    if (current_piece_y >= 0) {
-	        place_piece((bool *) screen, 3, current_piece_y, current_piece);
-	        memcpy(board, screen, SCREEN_X * SCREEN_Y * sizeof(bool));
-	    } else {
-	        game_over((bool *) screen, (bool *) board);
-	    }
-	    piece_number = rand() % 4;
-            current_piece = pieces[piece_number];
-	    current_piece_y = -1;
-	}
+        game_time += 10;
+        renderer_delay(10);
 
-	renderer_delay(300);
-
-	renderer_render((bool *) screen);
+        renderer_render((bool *) screen);
     }
     renderer_destroy();
 
