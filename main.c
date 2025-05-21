@@ -1,9 +1,10 @@
 #include <time.h>
 #include <stdlib.h>
-#include "sdl_renderer.h"
 
-#define SCREEN_X 8
-#define SCREEN_Y 16
+#define SCREEN_X 16
+#define SCREEN_Y 24
+
+#include "sdl_renderer.h"
 
 bool ONE_DEFINITION[1] = {true};
 bool FOUR_DEFINITION[4] = {true, true, true, true};
@@ -42,16 +43,19 @@ bool can_place_piece(
 }
 
 void place_piece(
+    bool *board,
     bool *screen,
     char x,
     char y,
     struct Piece piece
 ) {
+    memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool));
     for (int i = 0; i < piece.size_x; ++i) {
         for (int j = 0; j < piece.size_y; ++j) {
             *(screen + (x + i) * SCREEN_Y + (y + j)) = *(screen + (x + i) * SCREEN_Y + (y + j)) || *(piece.definition + i * piece.size_y + j);
         }
     }
+    renderer_render((bool *) screen);
 }
 
 void game_over(
@@ -76,6 +80,25 @@ void game_over(
         renderer_render((bool *) screen);
         renderer_delay(100);
     }
+}
+
+void check_board(
+    bool *screen,
+    bool *board
+) {
+    int by = SCREEN_Y - 1;
+    for (int y = SCREEN_Y - 1; y > 0; --y) {
+        bool row_is_full = true;
+        for (int x = 0; x < SCREEN_X; ++x) {
+            row_is_full = row_is_full && *(screen + x * SCREEN_Y + y);
+            *(board + x * SCREEN_Y + by) = *(screen + x * SCREEN_Y + y);
+        }
+        if (!row_is_full) {
+            --by;
+        }
+    }
+    memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool));
+    renderer_render((bool *) screen);
 }
 
 static int game_time = 0;
@@ -109,16 +132,22 @@ int main(int argc, char** argv) {
                     running = false;
                         break;
                     case EVENT_LEFT:
-                        if (can_place_piece((bool *) board, piece_position_x - 1, current_piece_y, current_piece))
+                        if (can_place_piece((bool *) board, piece_position_x - 1, current_piece_y, current_piece)) {
                             --piece_position_x;
+                            place_piece((bool *) board, (bool *) screen, piece_position_x, current_piece_y, current_piece);
+                        }
                         break;
                     case EVENT_RIGHT:
-                        if (can_place_piece((bool *) board, piece_position_x + 1, current_piece_y, current_piece))
+                        if (can_place_piece((bool *) board, piece_position_x + 1, current_piece_y, current_piece)) {
                             ++piece_position_x;
+                            place_piece((bool *) board, (bool *) screen, piece_position_x, current_piece_y, current_piece);
+                        }
                         break;
                     case EVENT_DOWN:
-                        if (can_place_piece((bool *) board, piece_position_x, current_piece_y + 1, current_piece))
+                        if (can_place_piece((bool *) board, piece_position_x, current_piece_y + 1, current_piece)) {
                             ++current_piece_y;
+                            place_piece((bool *) board, (bool *) screen, piece_position_x, current_piece_y, current_piece);
+                        }
                         break;
                     case EVENT_UP:
                         break;
@@ -131,12 +160,12 @@ int main(int argc, char** argv) {
             game_time = 0;
             memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool)); 
             if (can_place_piece((bool *) screen, piece_position_x, current_piece_y + 1, current_piece)) {
-                place_piece((bool *) screen, piece_position_x, current_piece_y + 1, current_piece);
+                place_piece((bool *) board, (bool *) screen, piece_position_x, current_piece_y + 1, current_piece);
                 current_piece_y++;
             } else {
                 if (current_piece_y >= 0) {
-                    place_piece((bool *) screen, piece_position_x, current_piece_y, current_piece);
-                    memcpy(board, screen, SCREEN_X * SCREEN_Y * sizeof(bool));
+                    place_piece((bool *) board, (bool *) screen, piece_position_x, current_piece_y, current_piece);
+                    check_board((bool *) screen, (bool *) board);
                 } else {
                     game_over((bool *) screen, (bool *) board);
                 }
@@ -150,7 +179,6 @@ int main(int argc, char** argv) {
         game_time += 10;
         renderer_delay(10);
 
-        renderer_render((bool *) screen);
     }
     renderer_destroy();
 

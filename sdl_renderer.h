@@ -7,8 +7,8 @@
 #include "SDL2/SDL.h"
 
 /* macros */
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 640
+#define SCREEN_WIDTH 40 * SCREEN_X
+#define SCREEN_HEIGHT 40 * SCREEN_Y
 #define WINDOW_TITLE "Tetris on SDL2"
 
 /* variables */
@@ -73,9 +73,9 @@ void renderer_render(bool *a) {
         SDL_RenderClear(renderer);
 
 
-	for (int x = 0; x < 8; ++x) {
-	    for (int y = 0; y < 16; ++y) {
-		if (*(a + x * 16 + y) == true) {
+	for (int x = 0; x < SCREEN_X; ++x) {
+	    for (int y = 0; y < SCREEN_Y; ++y) {
+		if (*(a + x * SCREEN_Y + y) == true) {
                     SDL_Rect rect;
                     rect.x = 0 + x * 8 * 5;
                     rect.y = 0 + y * 8 * 5;
@@ -89,11 +89,11 @@ void renderer_render(bool *a) {
 	    }
 	}
     	SDL_SetRenderDrawColor(renderer, 111, 105, 145, 255);
-	for (int x = 0; x < 1 + 8 * 8 * 5; x += 8 * 5) {
+	for (int x = 0; x < 1 + SCREEN_X * 8 * 5; x += 8 * 5) {
             SDL_RenderDrawLine(renderer, x, 0, x, SCREEN_HEIGHT);
         }
 
-	for (int y = 0; y < 1 + 16 * 8 * 5; y += 8 * 5) {
+	for (int y = 0; y < 1 + SCREEN_Y * 8 * 5; y += 8 * 5) {
             SDL_RenderDrawLine(renderer, 0, y, SCREEN_WIDTH, y);
         }
     	SDL_SetRenderDrawColor(renderer, 110, 177, 255, 255);
