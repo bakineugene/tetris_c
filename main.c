@@ -52,20 +52,24 @@ bool can_place_piece(
     return true;
 }
 
-void place_piece(
+bool place_piece(
     bool *board,
     bool *screen,
     char x,
     char y,
     struct Piece piece
 ) {
-    memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool));
-    for (int i = 0; i < piece.size_x; ++i) {
-        for (int j = 0; j < piece.size_y; ++j) {
-            *(screen + (x + i) * SCREEN_Y + (y + j)) = *(screen + (x + i) * SCREEN_Y + (y + j)) || *(piece.definition + i * piece.size_y + j);
+    if (can_place_piece(board, x, y, piece)) {
+        memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool));
+        for (int i = 0; i < piece.size_x; ++i) {
+            for (int j = 0; j < piece.size_y; ++j) {
+                *(screen + (x + i) * SCREEN_Y + (y + j)) = *(screen + (x + i) * SCREEN_Y + (y + j)) || *(piece.definition + i * piece.size_y + j);
+            }
         }
+        renderer_render((bool *) screen);
+        return true;
     }
-    renderer_render((bool *) screen);
+    return false;
 }
 
 void game_over(
@@ -140,21 +144,18 @@ int main(int argc, char** argv) {
                     running = false;
                         break;
                     case EVENT_LEFT:
-                        if (can_place_piece((bool *) board, piece.position.x - 1, piece.position.y, piece.piece)) {
+                        if (place_piece((bool *) board, (bool *) screen, piece.position.x - 1, piece.position.y, piece.piece)) {
                             --piece.position.x;
-                            place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y, piece.piece);
                         }
                         break;
                     case EVENT_RIGHT:
-                        if (can_place_piece((bool *) board, piece.position.x + 1, piece.position.y, piece.piece)) {
+                        if (place_piece((bool *) board, (bool *) screen, piece.position.x + 1, piece.position.y, piece.piece)) {
                             ++piece.position.x;
-                            place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y, piece.piece);
                         }
                         break;
                     case EVENT_DOWN:
-                        if (can_place_piece((bool *) board, piece.position.x, piece.position.y + 1, piece.piece)) {
+                        if (place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y + 1, piece.piece)) {
                             ++piece.position.y;
-                            place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y, piece.piece);
                         }
                         break;
                     case EVENT_UP:
@@ -167,8 +168,7 @@ int main(int argc, char** argv) {
         if (game_time == 300) {
             game_time = 0;
             memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool)); 
-            if (can_place_piece((bool *) screen, piece.position.x, piece.position.y + 1, piece.piece)) {
-                place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y + 1, piece.piece);
+            if (place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y + 1, piece.piece)) {
                 piece.position.y++;
             } else {
                 if (piece.position.y >= 0) {
