@@ -4,6 +4,7 @@
 #define SCREEN_X 16
 #define SCREEN_Y 24
 
+#include "colours.h"
 #include "sdl_renderer.h"
 
 bool ONE_DEFINITION[1] = {true};
@@ -24,6 +25,7 @@ struct Piece {
 struct CurrentPiece {
     struct Piece piece;
     struct Position position;
+    enum Colour colour;
 };
 
 const struct Piece g_bar = {2, 3, (bool *) G_BAR_DEFINITION};
@@ -32,7 +34,7 @@ const struct Piece bar = {1, 4, (bool *) FOUR_DEFINITION};
 const struct Piece bar_2 = {4, 1, (bool *) FOUR_DEFINITION};
 
 bool can_place_piece(
-    bool *screen,
+    char *screen,
     char x,
     char y,
     struct Piece piece
@@ -53,52 +55,58 @@ bool can_place_piece(
 }
 
 bool place_piece(
-    bool *board,
-    bool *screen,
+    char *board,
+    char *screen,
     char x,
     char y,
-    struct Piece piece
+    struct Piece piece,
+    enum Colour colour
 ) {
     if (can_place_piece(board, x, y, piece)) {
-        memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool));
+        memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(char));
         for (int i = 0; i < piece.size_x; ++i) {
             for (int j = 0; j < piece.size_y; ++j) {
-                *(screen + (x + i) * SCREEN_Y + (y + j)) = *(screen + (x + i) * SCREEN_Y + (y + j)) || *(piece.definition + i * piece.size_y + j);
+                char screen_colour = *(screen + (x + i) * SCREEN_Y + (y + j));
+                if (screen_colour > 0) {
+                    *(screen + (x + i) * SCREEN_Y + (y + j)) = screen_colour;
+                } else if (*(piece.definition + i * piece.size_y + j)) {
+                    *(screen + (x + i) * SCREEN_Y + (y + j)) = colour; 
+                }
             }
         }
-        renderer_render((bool *) screen);
+        renderer_render((char *) screen);
         return true;
     }
     return false;
 }
 
 void game_over(
-    bool *screen,
-    bool *board
+    char *screen,
+    char *board
 ) {
     for (int y = 0; y < SCREEN_Y; ++y) {
         for (int x = 0; x < SCREEN_X; ++x) {
-            *(screen + x * SCREEN_Y + y) = true;
+            *(screen + x * SCREEN_Y + y) = COLOUR_RED;
         }
 
-        renderer_render((bool *) screen);
+        renderer_render((char *) screen);
         renderer_delay(100);
     }
 
     for (int y = SCREEN_Y - 1; y >= 0; --y) {
         for (int x = 0; x < SCREEN_X; ++x) {
-            *(screen + x * SCREEN_Y + y) = false;
-            *(board + x * SCREEN_Y + y) = false;
+            *(screen + x * SCREEN_Y + y) = 0;
+            *(board + x * SCREEN_Y + y) = 0;
         }
 
-        renderer_render((bool *) screen);
+        renderer_render((char *) screen);
         renderer_delay(100);
     }
 }
 
 void check_board(
-    bool *screen,
-    bool *board
+    char *screen,
+    char *board
 ) {
     int by = SCREEN_Y - 1;
     for (int y = SCREEN_Y - 1; y > 0; --y) {
@@ -111,21 +119,23 @@ void check_board(
             --by;
         }
     }
-    memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool));
-    renderer_render((bool *) screen);
+    memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(char));
+    renderer_render((char *) screen);
 }
 
 static int game_time = 0;
 static bool running = true;
 struct Piece pieces[4] = {square, bar, bar_2, g_bar};
+enum Colour colours[7] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET};
+ 
 
 int main(int argc, char** argv) {
     srand(time(NULL));
     
     renderer_init();
 
-    bool board[SCREEN_X][SCREEN_Y];
-    bool screen[SCREEN_X][SCREEN_Y];
+    char board[SCREEN_X][SCREEN_Y];
+    char screen[SCREEN_X][SCREEN_Y];
 
     for (int x = 0; x < SCREEN_X; ++x) {
         for (int y = 0; y < SCREEN_Y; ++y) {
@@ -134,7 +144,7 @@ int main(int argc, char** argv) {
     }
 
 
-    struct CurrentPiece piece = {pieces[rand() % 4], {3, -1}};
+    struct CurrentPiece piece = {pieces[rand() % 4], {3, -1}, colours[rand() % 7]};
     while (running) {
         enum Event event = EVENT_EMPTY;
         do {
@@ -144,17 +154,17 @@ int main(int argc, char** argv) {
                     running = false;
                         break;
                     case EVENT_LEFT:
-                        if (place_piece((bool *) board, (bool *) screen, piece.position.x - 1, piece.position.y, piece.piece)) {
+                        if (place_piece((char *) board, (char *) screen, piece.position.x - 1, piece.position.y, piece.piece, piece.colour)) {
                             --piece.position.x;
                         }
                         break;
                     case EVENT_RIGHT:
-                        if (place_piece((bool *) board, (bool *) screen, piece.position.x + 1, piece.position.y, piece.piece)) {
+                        if (place_piece((char *) board, (char *) screen, piece.position.x + 1, piece.position.y, piece.piece, piece.colour)) {
                             ++piece.position.x;
                         }
                         break;
                     case EVENT_DOWN:
-                        if (place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y + 1, piece.piece)) {
+                        if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y + 1, piece.piece, piece.colour)) {
                             ++piece.position.y;
                         }
                         break;
@@ -167,19 +177,20 @@ int main(int argc, char** argv) {
 
         if (game_time == 300) {
             game_time = 0;
-            memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(bool)); 
-            if (place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y + 1, piece.piece)) {
+            memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(char)); 
+            if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y + 1, piece.piece, piece.colour)) {
                 piece.position.y++;
             } else {
                 if (piece.position.y >= 0) {
-                    place_piece((bool *) board, (bool *) screen, piece.position.x, piece.position.y, piece.piece);
-                    check_board((bool *) screen, (bool *) board);
+                    place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y, piece.piece, piece.colour);
+                    check_board((char *) screen, (char *) board);
                 } else {
-                    game_over((bool *) screen, (bool *) board);
+                    game_over((char *) screen, (char *) board);
                 }
                 piece.piece = pieces[rand() % 4];
                 piece.position.y = -1;
                 piece.position.x = 3;
+                piece.colour = colours[rand() % 7];
             }
         }
 

@@ -1,0 +1,9 @@
+enum Colour {
+    COLOUR_RED = 2,
+    COLOUR_ORANGE = 3,
+    COLOUR_YELLOW = 4,
+    COLOUR_GREEN = 5,
+    COLOUR_BLUE = 6,
+    COLOUR_DEEP_BLUE = 7,
+    COLOUR_VIOLET = 9
+};
