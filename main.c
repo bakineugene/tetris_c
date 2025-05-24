@@ -7,20 +7,40 @@
 #include "colours.h"
 #include "sdl_renderer.h"
 
-bool ONE_DEFINITION[1] = {true};
-bool FOUR_DEFINITION[4] = {true, true, true, true};
-bool G_BAR_DEFINITION[6] = {true, true, true, true, false, false};
-
 struct Position {
     char x;
     char y;
 };
 
 struct Piece {
-    char size_x;
-    char size_y;
-    bool *definition;
+    char size;
+    struct Position *definition;
 };
+
+static char pieces_number = 7;
+
+struct Position i_definition[4] = {{-1, 0}, {0, 0}, {1, 0}, {2, 0}};
+static const struct Piece i_bar = {4, i_definition};
+
+struct Position j_definition[4] = {{0, -1}, {0, 0}, {0, 1}, {-1, 1}};
+static const struct Piece j_bar = {4, j_definition};
+
+struct Position l_definition[4] = {{0, -1}, {0, 0}, {0, 1}, {1, 1}};
+static const struct Piece l_bar = {4, l_definition};
+
+struct Position o_definition[4] = {{-1, 0}, {0, 0}, {-1, 1}, {0, 1}};
+static const struct Piece o_bar = {4, o_definition};
+
+struct Position s_definition[4] = {{0, 0}, {1, 0}, {0, 1}, {-1, 1}};
+static const struct Piece s_bar = {4, s_definition};
+
+struct Position t_definition[4] = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
+static const struct Piece t_bar = {4, t_definition};
+
+struct Position z_definition[4] = {{0, 0}, {-1, 0}, {0, 1}, {1, 1}};
+static const struct Piece z_bar = {4, z_definition};
+
+struct Piece pieces[7] = {i_bar, j_bar, l_bar, o_bar, s_bar, t_bar, z_bar};
 
 struct CurrentPiece {
     struct Piece piece;
@@ -28,28 +48,21 @@ struct CurrentPiece {
     enum Colour colour;
 };
 
-const struct Piece g_bar = {2, 3, (bool *) G_BAR_DEFINITION};
-const struct Piece square = {2, 2, (bool *) FOUR_DEFINITION};
-const struct Piece bar = {1, 4, (bool *) FOUR_DEFINITION};
-const struct Piece bar_2 = {4, 1, (bool *) FOUR_DEFINITION};
-
 bool can_place_piece(
     char *screen,
     char x,
     char y,
     struct Piece piece
 ) {
-    for (int i = 0; i < piece.size_x; ++i) {
-        for (int j = 0; j < piece.size_y; ++j) {
-            if (*(piece.definition + i * piece.size_y + j)) { 
-                if (x + i >= SCREEN_X || x + i < 0 || y + j >= SCREEN_Y) {
-                    return false;
-                }
-                if (*(screen + (x + i) * SCREEN_Y + (y + j))) {
-                    return false;
-                }
-            }
-	    }
+    for (int i = 0; i < piece.size; ++i) {
+        char piece_x = (*(piece.definition + i)).x + x;
+        char piece_y = (*(piece.definition + i)).y + y;
+        if (piece_x >= SCREEN_X || piece_x < 0 || piece_y >= SCREEN_Y) {
+            return false;
+        }
+        if (*(screen + piece_x * SCREEN_Y + piece_y)) {
+            return false;
+        }
     }
     return true;
 }
@@ -64,14 +77,14 @@ bool place_piece(
 ) {
     if (can_place_piece(board, x, y, piece)) {
         memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(char));
-        for (int i = 0; i < piece.size_x; ++i) {
-            for (int j = 0; j < piece.size_y; ++j) {
-                char screen_colour = *(screen + (x + i) * SCREEN_Y + (y + j));
-                if (screen_colour > 0) {
-                    *(screen + (x + i) * SCREEN_Y + (y + j)) = screen_colour;
-                } else if (*(piece.definition + i * piece.size_y + j)) {
-                    *(screen + (x + i) * SCREEN_Y + (y + j)) = colour; 
-                }
+        for (int i = 0; i < piece.size; ++i) {
+            char piece_x = (*(piece.definition + i)).x + x;
+            char piece_y = (*(piece.definition + i)).y + y;
+            char screen_colour = *(screen + piece_x * SCREEN_Y + piece_y);
+            if (screen_colour > 0) {
+                *(screen + piece_x * SCREEN_Y + piece_y) = screen_colour;
+            } else {
+                *(screen + piece_x * SCREEN_Y + piece_y) = colour; 
             }
         }
         renderer_render((char *) screen);
@@ -125,7 +138,6 @@ void check_board(
 
 static int game_time = 0;
 static bool running = true;
-struct Piece pieces[4] = {square, bar, bar_2, g_bar};
 enum Colour colours[7] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET};
  
 
@@ -144,7 +156,7 @@ int main(int argc, char** argv) {
     }
 
 
-    struct CurrentPiece piece = {pieces[rand() % 4], {3, -1}, colours[rand() % 7]};
+    struct CurrentPiece piece = {pieces[rand() % pieces_number], {3, 1}, colours[rand() % 7]};
     while (running) {
         enum Event event = EVENT_EMPTY;
         do {
@@ -187,8 +199,8 @@ int main(int argc, char** argv) {
                 } else {
                     game_over((char *) screen, (char *) board);
                 }
-                piece.piece = pieces[rand() % 4];
-                piece.position.y = -1;
+                piece.piece = pieces[rand() % pieces_number];
+                piece.position.y = 1;
                 piece.position.x = 3;
                 piece.colour = colours[rand() % 7];
             }
