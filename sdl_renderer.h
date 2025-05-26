@@ -35,21 +35,21 @@ enum Event renderer_get_event() {
     if (SDL_PollEvent(&event)) {
 	switch(event.type) {
 	    case SDL_QUIT:
-                return EVENT_EXIT;
-            case SDL_KEYDOWN:
-		switch (event.key.keysym.sym) {
-	            case SDLK_LEFT:
+            return EVENT_EXIT;
+        case SDL_KEYDOWN:
+            switch (event.key.keysym.sym) {
+                case SDLK_LEFT:
                         return EVENT_LEFT;
-	            case SDLK_RIGHT:
+                case SDLK_RIGHT:
                         return EVENT_RIGHT;
-	            case SDLK_DOWN:
+                case SDLK_DOWN:
                         return EVENT_DOWN;
-	            case SDLK_UP:
+                case SDLK_UP:
                         return EVENT_UP;
-	            case SDLK_SPACE:
+                case SDLK_SPACE:
                         return EVENT_SPACE;
-	        }
-          }
+            }
+        }
     }
     return EVENT_EMPTY;
 }

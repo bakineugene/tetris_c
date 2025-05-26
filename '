@@ -19,7 +19,7 @@ struct Piece {
 };
 
 static char pieces_number = 7;
-static const char default_rotation = 1;
+static const char default_rotation = 0;
 
 struct Position i_definition[4] = {{-1, 0}, {0, 0}, {1, 0}, {2, 0}};
 static const struct Piece i_bar = {4, true, i_definition};
@@ -66,22 +66,18 @@ bool can_place_piece(
             case 0: {
                 piece_x = (*(piece.definition + i)).x;  
                 piece_y = (*(piece.definition + i)).y;
-                break;
             }
             case 1: {
                 piece_x = -(*(piece.definition + i)).y;  
                 piece_y = (*(piece.definition + i)).x;
-                break;
             }
             case 2: {
                 piece_x = -(*(piece.definition + i)).x;  
                 piece_y = -(*(piece.definition + i)).y;
-                break;
             }
             case 3: {
                 piece_x = (*(piece.definition + i)).y;  
                 piece_y = -(*(piece.definition + i)).x;
-                break;
             }
         }
 
@@ -116,22 +112,18 @@ bool place_piece(
                 case 0: {
                     piece_x = (*(piece.definition + i)).x;  
                     piece_y = (*(piece.definition + i)).y;
-                    break;
                 }
                 case 1: {
                     piece_x = -(*(piece.definition + i)).y;  
                     piece_y = (*(piece.definition + i)).x;
-                    break;
                 }
                 case 2: {
                     piece_x = -(*(piece.definition + i)).x;  
                     piece_y = -(*(piece.definition + i)).y;
-                    break;
                 }
                 case 3: {
                     piece_x = (*(piece.definition + i)).y;  
                     piece_y = -(*(piece.definition + i)).x;
-                    break;
                 }
             }
 
@@ -212,7 +204,7 @@ int main(int argc, char** argv) {
 	    }
     }
 
-    struct CurrentPiece piece = {pieces[rand() % pieces_number], {5, 0}, default_rotation, colours[rand() % 7]};
+    struct CurrentPiece piece = {pieces[rand() % pieces_number], {5, 5}, default_rotation, colours[rand() % 7]};
     while (running) {
         enum Event event = EVENT_EMPTY;
         do {
@@ -241,7 +233,7 @@ int main(int argc, char** argv) {
                     case EVENT_SPACE:
                         char next_rotation = ++piece.rotation;
                         if (next_rotation > 3) next_rotation = 0;
-                        if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y, next_rotation, piece.piece, piece.colour)) {
+                        if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y + 1, next_rotation, piece.piece, piece.colour)) {
                             piece.rotation = next_rotation;
                         }
                         break;
@@ -262,7 +254,7 @@ int main(int argc, char** argv) {
                 }
                 piece.piece = pieces[rand() % pieces_number];
                 piece.rotation = default_rotation;
-                piece.position.y = 0;
+                piece.position.y = 5;
                 piece.position.x = 5;
                 piece.colour = colours[rand() % 7];
             }
