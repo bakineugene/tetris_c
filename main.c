@@ -19,7 +19,7 @@ struct Piece {
 };
 
 static char pieces_number = 7;
-static const char default_rotation = 1;
+static const char default_rotation = 0;
 
 struct Position i_definition[4] = {{-1, 0}, {0, 0}, {1, 0}, {2, 0}};
 static const struct Piece i_bar = {4, true, i_definition};
@@ -30,7 +30,7 @@ static const struct Piece j_bar = {4, false, j_definition};
 struct Position l_definition[4] = {{0, -1}, {0, 0}, {0, 1}, {1, 1}};
 static const struct Piece l_bar = {4, false, l_definition};
 
-struct Position o_definition[4] = {{-1, 0}, {0, 0}, {-1, 1}, {0, 1}};
+struct Position o_definition[4] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
 static const struct Piece o_bar = {4, true, o_definition};
 
 struct Position s_definition[4] = {{0, 0}, {1, 0}, {0, 1}, {-1, 1}};
@@ -61,26 +61,37 @@ bool can_place_piece(
     for (int i = 0; i < piece.size; ++i) {
         char piece_x;
         char piece_y;
+        struct Position* position = piece.definition + i;
 
         switch(rotation) {
             case 0: {
-                piece_x = (*(piece.definition + i)).x;  
-                piece_y = (*(piece.definition + i)).y;
+                piece_x = (*position).x;  
+                piece_y = (*position).y;
                 break;
             }
             case 1: {
-                piece_x = -(*(piece.definition + i)).y;  
-                piece_y = (*(piece.definition + i)).x;
+                piece_x = -(*position).y;  
+                piece_y = (*position).x;
+                if (piece.moving_center) {
+                    piece_x += 1;
+                }
                 break;
             }
             case 2: {
-                piece_x = -(*(piece.definition + i)).x;  
-                piece_y = -(*(piece.definition + i)).y;
+                piece_x = -(*position).x;  
+                piece_y = -(*position).y;
+                if (piece.moving_center) {
+                    piece_x += 1;
+                    piece_y += 1;
+                }
                 break;
             }
             case 3: {
-                piece_x = (*(piece.definition + i)).y;  
-                piece_y = -(*(piece.definition + i)).x;
+                piece_x = (*position).y;  
+                piece_y = -(*position).x;
+                if (piece.moving_center) {
+                    piece_y += 1;
+                }
                 break;
             }
         }
@@ -121,16 +132,26 @@ bool place_piece(
                 case 1: {
                     piece_x = -(*(piece.definition + i)).y;  
                     piece_y = (*(piece.definition + i)).x;
+                    if (piece.moving_center) {
+                        piece_x += 1;
+                    }
                     break;
                 }
                 case 2: {
                     piece_x = -(*(piece.definition + i)).x;  
                     piece_y = -(*(piece.definition + i)).y;
+                    if (piece.moving_center) {
+                        piece_x += 1;
+                        piece_y += 1;
+                    }
                     break;
                 }
                 case 3: {
                     piece_x = (*(piece.definition + i)).y;  
                     piece_y = -(*(piece.definition + i)).x;
+                    if (piece.moving_center) {
+                        piece_y += 1;
+                    }
                     break;
                 }
             }
