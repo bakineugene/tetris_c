@@ -137,11 +137,9 @@ bool place_piece(
 
             char final_x = piece_x + x;
             char final_y = piece_y + y;
-            char screen_colour = *(screen + final_x * SCREEN_Y + final_y);
-            if (screen_colour > 0) {
-                *(screen + final_x * SCREEN_Y + final_y) = screen_colour;
-            } else {
-                *(screen + final_x * SCREEN_Y + final_y) = colour; 
+            char* screen_colour = screen + final_x * SCREEN_Y + final_y;
+            if (*screen_colour == 0) {
+                *screen_colour = colour;
             }
         }
         renderer_render((char *) screen);
@@ -239,7 +237,7 @@ int main(int argc, char** argv) {
                     case EVENT_UP:
                         break;
                     case EVENT_SPACE:
-                        char next_rotation = ++piece.rotation;
+                        char next_rotation = piece.rotation + 1;
                         if (next_rotation > 3) next_rotation = 0;
                         if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y, next_rotation, piece.piece, piece.colour)) {
                             piece.rotation = next_rotation;
