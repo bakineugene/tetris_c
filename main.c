@@ -1,11 +1,33 @@
 #include <time.h>
-#include <stdlib.h>
+
+#define true 1
+#define false 0
 
 #define SCREEN_X 16
 #define SCREEN_Y 24
 
+#define START_X 8
+
 #include "colours.h"
+
+#if defined(__AVR__)
+#include <avr/pgmspace.h>
+#include "avr_renderer.h"
+#else
+#include <stdlib.h>
 #include "sdl_renderer.h"
+#endif
+
+void copy_board(
+    char *screen,
+    char *board
+) {
+    for (int x = 0; x < SCREEN_X; ++x) {
+        for (int y = 0; y < SCREEN_Y; ++y) {
+            *(screen + x * SCREEN_Y + y) = *(board + x * SCREEN_Y + y);
+        }
+    }
+}
 
 struct Position {
     char x;
@@ -14,35 +36,22 @@ struct Position {
 
 struct Piece {
     char size;
-    bool moving_center;
-    struct Position *definition;
+    char moving_center;
+    struct Position definition[4];
 };
 
 static char pieces_number = 7;
 static const char default_rotation = 0;
 
-struct Position i_definition[4] = {{-1, 0}, {0, 0}, {1, 0}, {2, 0}};
-static const struct Piece i_bar = {4, true, i_definition};
-
-struct Position j_definition[4] = {{0, -1}, {0, 0}, {0, 1}, {-1, 1}};
-static const struct Piece j_bar = {4, false, j_definition};
-
-struct Position l_definition[4] = {{0, -1}, {0, 0}, {0, 1}, {1, 1}};
-static const struct Piece l_bar = {4, false, l_definition};
-
-struct Position o_definition[4] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-static const struct Piece o_bar = {4, true, o_definition};
-
-struct Position s_definition[4] = {{0, 0}, {1, 0}, {0, 1}, {-1, 1}};
-static const struct Piece s_bar = {4, false, s_definition};
-
-struct Position t_definition[4] = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}};
-static const struct Piece t_bar = {4, false, t_definition};
-
-struct Position z_definition[4] = {{0, 0}, {-1, 0}, {0, 1}, {1, 1}};
-static const struct Piece z_bar = {4, false, z_definition};
-
-struct Piece pieces[7] = {i_bar, j_bar, l_bar, o_bar, s_bar, t_bar, z_bar};
+struct Piece pieces[7] = {
+    {4, true, {{-1, 0}, {0, 0}, {1, 0}, {2, 0}}},
+    {4, false, {{0, -1}, {0, 0}, {0, 1}, {-1, 1}}},
+    {4, false, {{0, -1}, {0, 0}, {0, 1}, {1, 1}}},
+    {4, true, {{0, 0}, {1, 0}, {1, 1}, {0, 1}}},
+    {4, false, {{0, 0}, {1, 0}, {0, 1}, {-1, 1}}},
+    {4, false, {{0, 0}, {1, 0}, {-1, 0}, {0, 1}}},
+    {4, false, {{0, 0}, {-1, 0}, {0, 1}, {1, 1}}}
+};
 
 struct CurrentPiece {
     struct Piece piece;
@@ -51,7 +60,7 @@ struct CurrentPiece {
     enum Colour colour;
 };
 
-bool can_place_piece(
+char can_place_piece(
     char *screen,
     char x,
     char y,
@@ -98,8 +107,17 @@ bool can_place_piece(
 
         char final_x = piece_x + x;
         char final_y = piece_y + y;
-        if (final_x >= SCREEN_X || final_x < 0 || final_y >= SCREEN_Y) {
+        if (final_x >= SCREEN_X) {
             return false;
+        }
+        if (final_x < 0) {
+            return false;
+        }
+        if (final_y >= SCREEN_Y) {
+            return false;
+        }
+        if (final_y < 0) {
+            return true;
         }
         if (*(screen + final_x * SCREEN_Y + final_y)) {
             return false;
@@ -108,7 +126,7 @@ bool can_place_piece(
     return true;
 }
 
-bool place_piece(
+char place_piece(
     char *board,
     char *screen,
     char x,
@@ -118,7 +136,7 @@ bool place_piece(
     enum Colour colour
 ) {
     if (can_place_piece(board, x, y, rotation, piece)) {
-        memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(char));
+        copy_board((char *) screen, (char *) board);
         for (int i = 0; i < piece.size; ++i) {
             char piece_x;
             char piece_y;
@@ -158,9 +176,11 @@ bool place_piece(
 
             char final_x = piece_x + x;
             char final_y = piece_y + y;
-            char* screen_colour = screen + final_x * SCREEN_Y + final_y;
-            if (*screen_colour == 0) {
-                *screen_colour = colour;
+            if (final_y >= 0) {
+                char* screen_colour = screen + final_x * SCREEN_Y + final_y;
+                if (*screen_colour == 0) {
+                    *screen_colour = colour;
+                }
             }
         }
         renderer_render((char *) screen);
@@ -179,7 +199,7 @@ void game_over(
         }
 
         renderer_render((char *) screen);
-        renderer_delay(100);
+        renderer_delay(10);
     }
 
     for (int y = SCREEN_Y - 1; y >= 0; --y) {
@@ -189,33 +209,53 @@ void game_over(
         }
 
         renderer_render((char *) screen);
-        renderer_delay(100);
+        renderer_delay(10);
     }
 }
 
 void check_board(
-    char *screen,
-    char *board
+    char *board,
+    char *screen
 ) {
     int by = SCREEN_Y - 1;
     for (int y = SCREEN_Y - 1; y > 0; --y) {
-        bool row_is_full = true;
+        char row_is_full = true;
         for (int x = 0; x < SCREEN_X; ++x) {
-            row_is_full = row_is_full && *(screen + x * SCREEN_Y + y);
-            *(board + x * SCREEN_Y + by) = *(screen + x * SCREEN_Y + y);
+            row_is_full = row_is_full && *(board + x * SCREEN_Y + y);
+            *(board + x * SCREEN_Y + by) = *(board + x * SCREEN_Y + y);
         }
         if (!row_is_full) {
             --by;
         }
     }
-    memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(char));
+    copy_board((char *) screen, (char *) board);
     renderer_render((char *) screen);
 }
 
 static int game_time = 0;
-static bool running = true;
-enum Colour colours[7] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET};
- 
+static char running = true;
+enum Colour colours[7] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET}; 
+
+void piece_down(
+    char *board,
+    char *screen,
+    struct CurrentPiece *piece
+) {
+    if (place_piece((char *) board, (char *) screen, piece->position.x, piece->position.y + 1, piece->rotation, piece->piece, piece->colour)) {
+        piece->position.y = piece->position.y + 1;
+    } else {
+        copy_board((char *) board, (char *) screen);
+        check_board((char *) screen, (char *) board);
+        piece->piece = pieces[rand() % pieces_number];
+        piece->rotation = default_rotation;
+        piece->position.y = 0;
+        piece->position.x = START_X;
+        piece->colour = colours[rand() % 7];
+        if (!place_piece((char *) board, (char *) screen, piece->position.x, piece->position.y, piece->rotation, piece->piece, piece->colour)) {
+            game_over((char *) screen, (char *) board);
+        }
+    }
+}
 
 int main(int argc, char** argv) {
     srand(time(NULL));
@@ -228,63 +268,58 @@ int main(int argc, char** argv) {
     for (int x = 0; x < SCREEN_X; ++x) {
         for (int y = 0; y < SCREEN_Y; ++y) {
 	        board[x][y] = false;
+	        screen[x][y] = false;
 	    }
     }
 
-    struct CurrentPiece piece = {pieces[rand() % pieces_number], {5, 0}, default_rotation, colours[rand() % 7]};
+    struct CurrentPiece piece = {pieces[rand() % pieces_number], {START_X, 0}, default_rotation, colours[rand() % 7]};
     while (running) {
         enum Event event = EVENT_EMPTY;
         do {
             event = renderer_get_event();
                 switch(event) {
-                    case EVENT_EXIT:
-                    running = false;
+                    case EVENT_EXIT: {
+                        running = false;
                         break;
-                    case EVENT_LEFT:
+                    }
+                    case EVENT_LEFT: {
                         if (place_piece((char *) board, (char *) screen, piece.position.x - 1, piece.position.y, piece.rotation, piece.piece, piece.colour)) {
                             --piece.position.x;
                         }
                         break;
-                    case EVENT_RIGHT:
+                    }
+                    case EVENT_RIGHT: {
                         if (place_piece((char *) board, (char *) screen, piece.position.x + 1, piece.position.y, piece.rotation, piece.piece, piece.colour)) {
                             ++piece.position.x;
                         }
                         break;
-                    case EVENT_DOWN:
+                    }
+                    case EVENT_DOWN: {
                         if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y + 1, piece.rotation, piece.piece, piece.colour)) {
-                            ++piece.position.y;
+                            piece_down((char *) board, (char *) screen, &piece);
                         }
                         break;
-                    case EVENT_UP:
+                    }
+                    case EVENT_UP: {
                         break;
-                    case EVENT_SPACE:
+                    }
+                    case EVENT_SPACE: {
                         char next_rotation = piece.rotation + 1;
                         if (next_rotation > 3) next_rotation = 0;
                         if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y, next_rotation, piece.piece, piece.colour)) {
                             piece.rotation = next_rotation;
                         }
                         break;
+                    }
+                    default: {
+                        break;
+                    }
                 }
         } while (event != EVENT_EMPTY);
 
         if (game_time == 300) {
             game_time = 0;
-            memcpy(screen, board, SCREEN_X * SCREEN_Y * sizeof(char)); 
-            if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y + 1, piece.rotation, piece.piece, piece.colour)) {
-                piece.position.y++;
-            } else {
-                if (piece.position.y >= 0) {
-                    place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y, piece.rotation, piece.piece, piece.colour);
-                    check_board((char *) screen, (char *) board);
-                } else {
-                    game_over((char *) screen, (char *) board);
-                }
-                piece.piece = pieces[rand() % pieces_number];
-                piece.rotation = default_rotation;
-                piece.position.y = 0;
-                piece.position.x = 5;
-                piece.colour = colours[rand() % 7];
-            }
+            piece_down((char *) board, (char *) screen, &piece);
         }
 
         game_time += 10;

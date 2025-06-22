@@ -29,7 +29,6 @@ static struct SDLColour renderer_colour_green = { 24, 226, 112 };
 static struct SDLColour renderer_colour_blue = { 26, 189, 224 };
 static struct SDLColour renderer_colour_deep_blue = { 25, 90, 225 };
 static struct SDLColour renderer_colour_violet = { 169, 27, 222 };
-static struct SDLColour renderer_colour_black = { 0, 0, 0 };
 
 enum Event renderer_get_event() {
     if (SDL_PollEvent(&event)) {
@@ -84,6 +83,8 @@ int renderer_init(void) {
     // SDL_SetRenderDrawColor(renderer, 110, 177, 255, 255);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_SetRenderDrawColor(renderer, 30, 20, 40, 255);
+
+    return 0;
 }
 
 void renderer_render(char *a) {
