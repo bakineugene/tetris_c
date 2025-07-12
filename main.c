@@ -60,6 +60,7 @@ struct CurrentPiece {
     enum Colour colour;
 };
 
+
 char can_place_piece(
     char *screen,
     char x,
@@ -226,6 +227,9 @@ void check_board(
         }
         if (!row_is_full) {
             --by;
+        } else {
+            renderer_play_sound(SOUND_DZIN);
+            renderer_delay(SOUND_DZIN.length / 16);
         }
     }
     copy_board((char *) screen, (char *) board);
@@ -236,13 +240,14 @@ static int game_time = 0;
 static char running = true;
 enum Colour colours[7] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET}; 
 
-void piece_down(
+int piece_down(
     char *board,
     char *screen,
     struct CurrentPiece *piece
 ) {
     if (place_piece((char *) board, (char *) screen, piece->position.x, piece->position.y + 1, piece->rotation, piece->piece, piece->colour)) {
         piece->position.y = piece->position.y + 1;
+        return 1;
     } else {
         copy_board((char *) board, (char *) screen);
         check_board((char *) screen, (char *) board);
@@ -255,6 +260,7 @@ void piece_down(
             game_over((char *) screen, (char *) board);
         }
     }
+    return 0;
 }
 
 int main(int argc, char** argv) {
@@ -277,44 +283,51 @@ int main(int argc, char** argv) {
         enum Event event = EVENT_EMPTY;
         do {
             event = renderer_get_event();
-                switch(event) {
-                    case EVENT_EXIT: {
-                        running = false;
-                        break;
-                    }
-                    case EVENT_LEFT: {
-                        if (place_piece((char *) board, (char *) screen, piece.position.x - 1, piece.position.y, piece.rotation, piece.piece, piece.colour)) {
-                            --piece.position.x;
-                        }
-                        break;
-                    }
-                    case EVENT_RIGHT: {
-                        if (place_piece((char *) board, (char *) screen, piece.position.x + 1, piece.position.y, piece.rotation, piece.piece, piece.colour)) {
-                            ++piece.position.x;
-                        }
-                        break;
-                    }
-                    case EVENT_DOWN: {
-                        if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y + 1, piece.rotation, piece.piece, piece.colour)) {
-                            piece_down((char *) board, (char *) screen, &piece);
-                        }
-                        break;
-                    }
-                    case EVENT_UP: {
-                        break;
-                    }
-                    case EVENT_SPACE: {
-                        char next_rotation = piece.rotation + 1;
-                        if (next_rotation > 3) next_rotation = 0;
-                        if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y, next_rotation, piece.piece, piece.colour)) {
-                            piece.rotation = next_rotation;
-                        }
-                        break;
-                    }
-                    default: {
-                        break;
-                    }
+            switch(event) {
+                case EVENT_EXIT: {
+                    running = false;
+                    break;
                 }
+                case EVENT_LEFT: {
+                    if (place_piece((char *) board, (char *) screen, piece.position.x - 1, piece.position.y, piece.rotation, piece.piece, piece.colour)) {
+                        --piece.position.x;
+                        renderer_play_sound(SOUND_CLICK);
+                    }
+                    break;
+                }
+                case EVENT_RIGHT: {
+                    if (place_piece((char *) board, (char *) screen, piece.position.x + 1, piece.position.y, piece.rotation, piece.piece, piece.colour)) {
+                        ++piece.position.x;
+                        renderer_play_sound(SOUND_CLICK);
+                    }
+                    break;
+                }
+                case EVENT_DOWN: {
+                    if (piece_down((char *) board, (char *) screen, &piece)) {
+                        renderer_play_sound(SOUND_CLICK);
+                    }
+                    break;
+                }
+                case EVENT_UP: {
+                    while (piece_down((char *) board, (char *) screen, &piece)) { renderer_delay(12); } 
+                    renderer_play_sound(SOUND_SPOON2);
+                    renderer_delay(200);
+                    break;
+                }
+                case EVENT_SPACE: {
+                    char next_rotation = piece.rotation + 1;
+                    if (next_rotation > 3) next_rotation = 0;
+                    if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y, next_rotation, piece.piece, piece.colour)) {
+                        piece.rotation = next_rotation;
+                        renderer_play_sound(SOUND_SPOON);
+                        renderer_delay(200);
+                    }
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
         } while (event != EVENT_EMPTY);
 
         if (game_time == 300) {

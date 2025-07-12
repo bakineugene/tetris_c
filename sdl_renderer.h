@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "events.h"
+#include "sdl_renderer_sound.h"
 
 #define SDL_MAIN_HANDLED
 #include "SDL2/SDL.h"
@@ -55,10 +56,12 @@ enum Event renderer_get_event() {
 
 int renderer_init(void) {
     /* Initializing SDL2 */
-    if (SDL_Init(SDL_INIT_VIDEO)) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS)) {
         printf("Unable to initialize SDL: %s\n", SDL_GetError());
         return -1;
     }
+
+    renderer_init_sound();
 
     /* Creating a SDL window */
     window = SDL_CreateWindow(WINDOW_TITLE,

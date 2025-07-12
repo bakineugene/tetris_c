@@ -3,10 +3,26 @@
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 
+#include "avr_renderer_sound.h"
+
 #define START_DATA_TRANSACTION()    PORTB &= ~(1 << PB2)
 #define END_DATA_TRANSACTION()  PORTB |= (1 << PB2)
 
+#define RENDERER_EVENT_DELAY 80
 #define NUM_DEVICES 6
+
+void ADC_Init() {
+    ADMUX = (1 << REFS0) | (0 << ADLAR);
+    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+    DIDR0 = (1 << ADC0D);
+}
+
+uint16_t ADC_Read(uint8_t channel) {
+    ADMUX = (ADMUX & 0xF0) | (channel & 0x0F);
+    ADCSRA |= (1 << ADSC);
+    while (ADCSRA & (1 << ADSC));
+    return ADC;
+}
 
 void initSPI(void) {
   DDRB |= (1 << PB2);	    // SS (CS - Chip Select)
@@ -67,21 +83,38 @@ void sendBuffer() {
 
 /* variables */
 
-int right = 200;
+int last_event = RENDERER_EVENT_DELAY;
 enum Event renderer_get_event() {
-    if (right == 0) {
-        right = 200;
-        return EVENT_RIGHT;
+    if (last_event <= 0) {
+        last_event = RENDERER_EVENT_DELAY;
+        
+        uint16_t adc_value = ADC_Read(0);
+
+        if (adc_value <= 100) {
+            return EVENT_EMPTY;
+        } else if (adc_value < 450 && adc_value > 100) {
+            return EVENT_SPACE;
+        } else if (adc_value >= 450 && adc_value < 600) {
+            return EVENT_RIGHT;
+        } else if (adc_value >= 600 && adc_value < 750) {
+            return EVENT_DOWN;
+        } else if (adc_value >= 750 && adc_value < 900) {
+            return EVENT_UP;
+        } else {
+            return EVENT_LEFT;
+        }
     }
-    --right;
+
     return EVENT_EMPTY;
 }
 
 int renderer_init(void) {
     initSPI();
+    ADC_Init();
     initMatrix();
     initBuffer();
-    sendBuffer();	
+    sendBuffer();
+    renderer_init_sound();
     return 0;
 }
 
@@ -184,7 +217,11 @@ void renderer_render(char *a) {
 }
 
 void renderer_delay(int delay) {
-    while (delay-- != 0) _delay_ms(1);
+    last_event -= delay;
+    while (delay > 0) {
+        delay = delay - 10;
+        _delay_ms(10);
+    }
 }
 
 void renderer_destroy() {
