@@ -30,28 +30,32 @@ void copy_board(
     char *screen,
     char *board
 ) {
-    for (int x = 0; x < SCREEN_X; ++x) {
-        for (int y = 0; y < SCREEN_Y; ++y) {
+    for (int x = 0; x < BOARD_SIZE_X; ++x) {
+        for (int y = 0; y < BOARD_SIZE_Y; ++y) {
             *(screen + x * SCREEN_Y + y) = *(board + x * SCREEN_Y + y);
         }
     }
 }
 
-struct Position {
+typedef struct Position {
     char x;
     char y;
-};
+} Position;
 
-struct Piece {
+typedef struct Piece {
     char size;
     char moving_center;
-    struct Position definition[4];
-};
+    Position definition[4];
+} Piece;
 
-static char pieces_number = 7;
+#define NUMBER_OF_COLOURS 7
+enum Colour colours[NUMBER_OF_COLOURS] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET}; 
+
+#define NUMBER_OF_PIECES 7
+
 static const char default_rotation = 0;
 
-struct Piece pieces[7] = {
+Piece pieces[NUMBER_OF_PIECES] = {
     {4, true, {{-1, 0}, {0, 0}, {1, 0}, {2, 0}}},
     {4, false, {{0, -1}, {0, 0}, {0, 1}, {-1, 1}}},
     {4, false, {{0, -1}, {0, 0}, {0, 1}, {1, 1}}},
@@ -61,24 +65,17 @@ struct Piece pieces[7] = {
     {4, false, {{0, 0}, {-1, 0}, {0, 1}, {1, 1}}}
 };
 
-struct CurrentPiece {
-    struct Piece piece;
-    struct Position position;
-    char rotation;
-    enum Colour colour;
-};
-
 char can_place_piece(
     char *screen,
     char x,
     char y,
     char rotation,
-    struct Piece piece
+    Piece piece
 ) {
     for (int i = 0; i < piece.size; ++i) {
         char piece_x;
         char piece_y;
-        struct Position* position = piece.definition + i;
+        Position* position = piece.definition + i;
 
         switch(rotation) {
             case 0: {
@@ -134,67 +131,123 @@ char can_place_piece(
     return true;
 }
 
+void erase_prediction(
+    char *board,
+    char *screen
+) {
+    for (int x = BOARD_SIZE_X; x < SCREEN_X; ++x) {
+        for (int y = 0; y < 10; ++y) {
+            *(screen + x * SCREEN_Y + y) = *(board + x * SCREEN_Y + y) = 0;
+        }
+    }
+}
+
+void draw_piece(
+    char *board,
+    char *screen,
+    char x,
+    char y,
+    char rotation,
+    Piece piece,
+    enum Colour colour
+) {
+    copy_board((char *) screen, (char *) board);
+    for (int i = 0; i < piece.size; ++i) {
+        char piece_x;
+        char piece_y;
+
+        switch(rotation) {
+            case 0: {
+                piece_x = (*(piece.definition + i)).x;  
+                piece_y = (*(piece.definition + i)).y;
+                break;
+            }
+            case 1: {
+                piece_x = -(*(piece.definition + i)).y;  
+                piece_y = (*(piece.definition + i)).x;
+                if (piece.moving_center) {
+                    piece_x += 1;
+                }
+                break;
+            }
+            case 2: {
+                piece_x = -(*(piece.definition + i)).x;  
+                piece_y = -(*(piece.definition + i)).y;
+                if (piece.moving_center) {
+                    piece_x += 1;
+                    piece_y += 1;
+                }
+                break;
+            }
+            case 3: {
+                piece_x = (*(piece.definition + i)).y;  
+                piece_y = -(*(piece.definition + i)).x;
+                if (piece.moving_center) {
+                    piece_y += 1;
+                }
+                break;
+            }
+        }
+
+        char final_x = piece_x + x;
+        char final_y = piece_y + y;
+        if (final_y >= 0) {
+            char* screen_colour = screen + final_x * BOARD_SIZE_Y + final_y;
+            if (*screen_colour == 0) {
+                *screen_colour = colour;
+            }
+        }
+    }
+    renderer_render((char *) screen);
+}
+
 char place_piece(
     char *board,
     char *screen,
     char x,
     char y,
     char rotation,
-    struct Piece piece,
+    Piece piece,
     enum Colour colour
 ) {
     if (can_place_piece(board, x, y, rotation, piece)) {
-        copy_board((char *) screen, (char *) board);
-        for (int i = 0; i < piece.size; ++i) {
-            char piece_x;
-            char piece_y;
-
-            switch(rotation) {
-                case 0: {
-                    piece_x = (*(piece.definition + i)).x;  
-                    piece_y = (*(piece.definition + i)).y;
-                    break;
-                }
-                case 1: {
-                    piece_x = -(*(piece.definition + i)).y;  
-                    piece_y = (*(piece.definition + i)).x;
-                    if (piece.moving_center) {
-                        piece_x += 1;
-                    }
-                    break;
-                }
-                case 2: {
-                    piece_x = -(*(piece.definition + i)).x;  
-                    piece_y = -(*(piece.definition + i)).y;
-                    if (piece.moving_center) {
-                        piece_x += 1;
-                        piece_y += 1;
-                    }
-                    break;
-                }
-                case 3: {
-                    piece_x = (*(piece.definition + i)).y;  
-                    piece_y = -(*(piece.definition + i)).x;
-                    if (piece.moving_center) {
-                        piece_y += 1;
-                    }
-                    break;
-                }
-            }
-
-            char final_x = piece_x + x;
-            char final_y = piece_y + y;
-            if (final_y >= 0) {
-                char* screen_colour = screen + final_x * BOARD_SIZE_Y + final_y;
-                if (*screen_colour == 0) {
-                    *screen_colour = colour;
-                }
-            }
-        }
-        renderer_render((char *) screen);
+        draw_piece(
+            board,
+            screen,
+            x,
+            y,
+            rotation,
+            piece,
+            colour
+        );
         return true;
     }
     return false;
+}
+
+typedef struct PieceDrawDef {
+    Piece piece;
+    Position position;
+    char rotation;
+    enum Colour colour;
+} PieceDrawDef;
+
+PieceDrawDef next_piece;
+PieceDrawDef select_next_piece(
+    char *screen,
+    char *board
+) {
+    PieceDrawDef result_piece = next_piece;
+    PieceDrawDef new_piece = {
+        pieces[rand() % NUMBER_OF_PIECES],
+        {START_X, 0},
+        default_rotation,
+        colours[rand() % NUMBER_OF_COLOURS]
+    };
+    next_piece = new_piece;
+    erase_prediction((char *) board, (char *) screen);
+    draw_piece((char *) board, (char *) screen, 12, 3, default_rotation, next_piece.piece, next_piece.colour);
+    return result_piece;
 }
 
 void game_over(
@@ -245,12 +298,11 @@ void check_board(
 
 static int game_time = 0;
 static char running = true;
-enum Colour colours[7] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET}; 
 
 int piece_down(
     char *board,
     char *screen,
-    struct CurrentPiece *piece
+    PieceDrawDef *piece
 ) {
     if (place_piece((char *) board, (char *) screen, piece->position.x, piece->position.y + 1, piece->rotation, piece->piece, piece->colour)) {
         piece->position.y = piece->position.y + 1;
@@ -258,11 +310,11 @@ int piece_down(
     } else {
         copy_board((char *) board, (char *) screen);
         check_board((char *) screen, (char *) board);
-        piece->piece = pieces[rand() % pieces_number];
-        piece->rotation = default_rotation;
-        piece->position.y = 0;
-        piece->position.x = START_X;
-        piece->colour = colours[rand() % 7];
+        PieceDrawDef next_piece = select_next_piece((char *) screen, (char *) board);
+        piece->piece = next_piece.piece;
+        piece->rotation = next_piece.rotation;
+        piece->position = next_piece.position;
+        piece->colour = next_piece.colour;
         if (!place_piece((char *) board, (char *) screen, piece->position.x, piece->position.y, piece->rotation, piece->piece, piece->colour)) {
             game_over((char *) screen, (char *) board);
         }
@@ -285,7 +337,8 @@ int main(int argc, char** argv) {
 	    }
     }
 
-    struct CurrentPiece piece = {pieces[rand() % pieces_number], {START_X, 0}, default_rotation, colours[rand() % 7]};
+    select_next_piece((char *) screen, (char *) board);
+    PieceDrawDef piece = select_next_piece((char *) screen, (char *) board);
     while (running) {
         enum Event event = EVENT_EMPTY;
         do {
