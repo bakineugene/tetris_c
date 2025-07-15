@@ -18,6 +18,11 @@
 #include "sdl_renderer.h"
 #endif
 
+#define TETRIS_SOUND_CLEAR_ROW SOUND_DZIN
+#define TETRIS_SOUND_MOVE SOUND_SPOON2
+#define TETRIS_SOUND_PLACE SOUND_CLICK
+#define TETRIS_SOUND_TURN SOUND_SPOON
+
 void copy_board(
     char *screen,
     char *board
@@ -228,8 +233,8 @@ void check_board(
         if (!row_is_full) {
             --by;
         } else {
-            renderer_play_sound(SOUND_DZIN);
-            renderer_delay(SOUND_DZIN.length / 16);
+            renderer_play_sound(TETRIS_SOUND_CLEAR_ROW);
+            renderer_delay(TETRIS_SOUND_CLEAR_ROW.length / 16);
         }
     }
     copy_board((char *) screen, (char *) board);
@@ -291,26 +296,26 @@ int main(int argc, char** argv) {
                 case EVENT_LEFT: {
                     if (place_piece((char *) board, (char *) screen, piece.position.x - 1, piece.position.y, piece.rotation, piece.piece, piece.colour)) {
                         --piece.position.x;
-                        renderer_play_sound(SOUND_CLICK);
+                        renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_RIGHT: {
                     if (place_piece((char *) board, (char *) screen, piece.position.x + 1, piece.position.y, piece.rotation, piece.piece, piece.colour)) {
                         ++piece.position.x;
-                        renderer_play_sound(SOUND_CLICK);
+                        renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_DOWN: {
                     if (piece_down((char *) board, (char *) screen, &piece)) {
-                        renderer_play_sound(SOUND_CLICK);
+                        renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_UP: {
                     while (piece_down((char *) board, (char *) screen, &piece)) { renderer_delay(12); } 
-                    renderer_play_sound(SOUND_SPOON2);
+                    renderer_play_sound(TETRIS_SOUND_PLACE);
                     renderer_delay(200);
                     break;
                 }
@@ -319,7 +324,7 @@ int main(int argc, char** argv) {
                     if (next_rotation > 3) next_rotation = 0;
                     if (place_piece((char *) board, (char *) screen, piece.position.x, piece.position.y, next_rotation, piece.piece, piece.colour)) {
                         piece.rotation = next_rotation;
-                        renderer_play_sound(SOUND_SPOON);
+                        renderer_play_sound(TETRIS_SOUND_TURN);
                         renderer_delay(200);
                     }
                     break;
