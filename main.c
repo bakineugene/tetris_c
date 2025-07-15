@@ -6,7 +6,10 @@
 #define SCREEN_X 16
 #define SCREEN_Y 24
 
-#define START_X 8
+#define BOARD_SIZE_X 10 
+#define BOARD_SIZE_Y 24 
+
+#define START_X 4
 
 #include "colours.h"
 
@@ -65,7 +68,6 @@ struct CurrentPiece {
     enum Colour colour;
 };
 
-
 char can_place_piece(
     char *screen,
     char x,
@@ -113,19 +115,19 @@ char can_place_piece(
 
         char final_x = piece_x + x;
         char final_y = piece_y + y;
-        if (final_x >= SCREEN_X) {
+        if (final_x >= BOARD_SIZE_X) {
             return false;
         }
         if (final_x < 0) {
             return false;
         }
-        if (final_y >= SCREEN_Y) {
+        if (final_y >= BOARD_SIZE_Y) {
             return false;
         }
         if (final_y < 0) {
             return true;
         }
-        if (*(screen + final_x * SCREEN_Y + final_y)) {
+        if (*(screen + final_x * BOARD_SIZE_Y + final_y)) {
             return false;
         }
     }
@@ -183,7 +185,7 @@ char place_piece(
             char final_x = piece_x + x;
             char final_y = piece_y + y;
             if (final_y >= 0) {
-                char* screen_colour = screen + final_x * SCREEN_Y + final_y;
+                char* screen_colour = screen + final_x * BOARD_SIZE_Y + final_y;
                 if (*screen_colour == 0) {
                     *screen_colour = colour;
                 }
@@ -199,8 +201,8 @@ void game_over(
     char *screen,
     char *board
 ) {
-    for (int y = 0; y < SCREEN_Y; ++y) {
-        for (int x = 0; x < SCREEN_X; ++x) {
+    for (int y = 0; y < BOARD_SIZE_Y; ++y) {
+        for (int x = 0; x < BOARD_SIZE_X; ++x) {
             *(screen + x * SCREEN_Y + y) = COLOUR_RED;
         }
 
@@ -209,7 +211,7 @@ void game_over(
     }
 
     for (int y = SCREEN_Y - 1; y >= 0; --y) {
-        for (int x = 0; x < SCREEN_X; ++x) {
+        for (int x = 0; x < BOARD_SIZE_X; ++x) {
             *(screen + x * SCREEN_Y + y) = 0;
             *(board + x * SCREEN_Y + y) = 0;
         }
@@ -223,10 +225,10 @@ void check_board(
     char *board,
     char *screen
 ) {
-    int by = SCREEN_Y - 1;
-    for (int y = SCREEN_Y - 1; y > 0; --y) {
+    int by = BOARD_SIZE_Y - 1;
+    for (int y = BOARD_SIZE_Y - 1; y > 0; --y) {
         char row_is_full = true;
-        for (int x = 0; x < SCREEN_X; ++x) {
+        for (int x = 0; x < BOARD_SIZE_X; ++x) {
             row_is_full = row_is_full && *(board + x * SCREEN_Y + y);
             *(board + x * SCREEN_Y + by) = *(board + x * SCREEN_Y + y);
         }
