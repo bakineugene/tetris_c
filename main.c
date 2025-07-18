@@ -166,8 +166,7 @@ void erase_prediction(
 void draw_piece(
     char *board,
     char *screen,
-    char x,
-    char y,
+    Position position,
     char rotation,
     Piece piece,
     enum Colour colour
@@ -180,10 +179,9 @@ void draw_piece(
             piece.moving_center
         );
 
-        char final_x = rotated.x + x;
-        char final_y = rotated.y + y;
-        if (final_y >= 0) {
-            char* screen_colour = screen + final_x * BOARD_SIZE_Y + final_y;
+        Position final = position_sum(position, rotated);
+        if (final.y >= 0) {
+            char* screen_colour = screen + final.x * BOARD_SIZE_Y + final.y;
             if (*screen_colour == 0) {
                 *screen_colour = colour;
             }
@@ -204,8 +202,7 @@ char place_piece(
         draw_piece(
             board,
             screen,
-            position.x,
-            position.y,
+            position,
             rotation,
             piece,
             colour
@@ -222,6 +219,10 @@ typedef struct PieceDrawDef {
     enum Colour colour;
 } PieceDrawDef;
 
+Position prediction_position = {
+    .x = 12,
+    .y = 3
+};
 PieceDrawDef next_piece;
 PieceDrawDef select_next_piece(
     char *screen,
@@ -236,7 +237,7 @@ PieceDrawDef select_next_piece(
     };
     next_piece = new_piece;
     erase_prediction((char *) board, (char *) screen);
-    draw_piece((char *) board, (char *) screen, 12, 3, default_rotation, next_piece.piece, next_piece.colour);
+    draw_piece((char *) board, (char *) screen, prediction_position, default_rotation, next_piece.piece, next_piece.colour);
     return result_piece;
 }
 
