@@ -65,6 +65,49 @@ Piece pieces[NUMBER_OF_PIECES] = {
     {4, false, {{0, 0}, {-1, 0}, {0, 1}, {1, 1}}}
 };
 
+Position calculate_rotation(
+    Position position,
+    char rotation,
+    char moving_center
+) {
+    Position result;
+
+    switch(rotation) {
+        case 0: {
+            result.x = position.x;  
+            result.y = position.y;
+            break;
+        }
+        case 1: {
+            result.x = -position.y;  
+            result.y = position.x;
+            if (moving_center) {
+                result.x += 1;
+            }
+            break;
+        }
+        case 2: {
+            result.x = -position.x;  
+            result.y = -position.y;
+            if (moving_center) {
+                result.x += 1;
+                result.y += 1;
+            }
+            break;
+        }
+        case 3: {
+            result.x = position.y;  
+            result.y = -position.x;
+            if (moving_center) {
+                result.y += 1;
+            }
+            break;
+        }
+    }
+
+    return result;
+}
+
 char can_place_piece(
     char *screen,
     char x,
@@ -73,45 +116,14 @@ char can_place_piece(
     Piece piece
 ) {
     for (int i = 0; i < piece.size; ++i) {
-        char piece_x;
-        char piece_y;
-        Position* position = piece.definition + i;
+        Position rotated = calculate_rotation(
+            *(piece.definition + i),
+            rotation,
+            piece.moving_center
+        );
 
-        switch(rotation) {
-            case 0: {
-                piece_x = (*position).x;  
-                piece_y = (*position).y;
-                break;
-            }
-            case 1: {
-                piece_x = -(*position).y;  
-                piece_y = (*position).x;
-                if (piece.moving_center) {
-                    piece_x += 1;
-                }
-                break;
-            }
-            case 2: {
-                piece_x = -(*position).x;  
-                piece_y = -(*position).y;
-                if (piece.moving_center) {
-                    piece_x += 1;
-                    piece_y += 1;
-                }
-                break;
-            }
-            case 3: {
-                piece_x = (*position).y;  
-                piece_y = -(*position).x;
-                if (piece.moving_center) {
-                    piece_y += 1;
-                }
-                break;
-            }
-        }
-
-        char final_x = piece_x + x;
-        char final_y = piece_y + y;
+        char final_x = rotated.x + x;
+        char final_y = rotated.y + y;
         if (final_x >= BOARD_SIZE_X) {
             return false;
         }
@@ -153,44 +165,14 @@ void draw_piece(
 ) {
     copy_board((char *) screen, (char *) board);
     for (int i = 0; i < piece.size; ++i) {
-        char piece_x;
-        char piece_y;
+        Position rotated = calculate_rotation(
+            *(piece.definition + i),
+            rotation,
+            piece.moving_center
+        );
 
-        switch(rotation) {
-            case 0: {
-                piece_x = (*(piece.definition + i)).x;  
-                piece_y = (*(piece.definition + i)).y;
-                break;
-            }
-            case 1: {
-                piece_x = -(*(piece.definition + i)).y;  
-                piece_y = (*(piece.definition + i)).x;
-                if (piece.moving_center) {
-                    piece_x += 1;
-                }
-                break;
-            }
-            case 2: {
-                piece_x = -(*(piece.definition + i)).x;  
-                piece_y = -(*(piece.definition + i)).y;
-                if (piece.moving_center) {
-                    piece_x += 1;
-                    piece_y += 1;
-                }
-                break;
-            }
-            case 3: {
-                piece_x = (*(piece.definition + i)).y;  
-                piece_y = -(*(piece.definition + i)).x;
-                if (piece.moving_center) {
-                    piece_y += 1;
-                }
-                break;
-            }
-        }
-
-        char final_x = piece_x + x;
-        char final_y = piece_y + y;
+        char final_x = rotated.x + x;
+        char final_y = rotated.y + y;
         if (final_y >= 0) {
             char* screen_colour = screen + final_x * BOARD_SIZE_Y + final_y;
             if (*screen_colour == 0) {
