@@ -119,6 +119,32 @@ Position position_rotate(
     return result;
 }
 
+int calculate_rotation_x_shift(
+    Position position,
+    char rotation,
+    Piece piece
+) {
+    int shift = 0;
+    for (int i = 0; i < piece.size; ++i) {
+        Position rotated = position_rotate(
+            *(piece.definition + i),
+            rotation,
+            piece.moving_center
+        );
+
+        Position final = position_sum(rotated, position);
+        if (final.x >= BOARD_SIZE_X) {
+            int new_shift = BOARD_SIZE_X - final.x - 1;
+            if (new_shift < shift) shift = new_shift;
+        }
+        if (final.x < 0) {
+            int new_shift = -final.x;
+            if (new_shift > shift) shift = new_shift;
+        }
+    }
+    return shift;
+}
+
 char can_place_piece(
     char *screen,
     Position position,
@@ -199,14 +225,7 @@ char place_piece(
     enum Colour colour
 ) {
     if (can_place_piece(board, position, rotation, piece)) {
-        draw_piece(
-            board,
-            screen,
-            position,
-            rotation,
-            piece,
-            colour
-        );
+        draw_piece(board, screen, position, rotation, piece, colour);
         return true;
     }
     return false;
@@ -380,8 +399,18 @@ int main(int argc, char** argv) {
                 case EVENT_SPACE: {
                     char next_rotation = piece.rotation + 1;
                     if (next_rotation > 3) next_rotation = 0;
-                    if (place_piece((char *) board, (char *) screen, piece.position, next_rotation, piece.piece, piece.colour)) {
+                    char shift = calculate_rotation_x_shift(
+                        piece.position,
+                        next_rotation,
+                        piece.piece
+                    );
+                    Position new_position = {
+                        .x = piece.position.x + shift,
+                        .y = piece.position.y
+                    };
+                    if (place_piece((char *) board, (char *) screen, new_position, next_rotation, piece.piece, piece.colour)) {
                         piece.rotation = next_rotation;
+                        piece.position = new_position;
                         renderer_play_sound(TETRIS_SOUND_TURN);
                         renderer_delay(200);
                     }
