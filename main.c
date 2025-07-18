@@ -65,7 +65,18 @@ Piece pieces[NUMBER_OF_PIECES] = {
     {4, false, {{0, 0}, {-1, 0}, {0, 1}, {1, 1}}}
 };
 
-Position calculate_rotation(
+Position position_sum(
+    Position a,
+    Position b
+) {
+    Position result = {
+        .x = a.x + b.x,
+        .y = a.y + b.y
+    };
+    return result;
+}
+
+Position position_rotate(
     Position position,
     char rotation,
     char moving_center
@@ -110,33 +121,31 @@ Position calculate_rotation(
 
 char can_place_piece(
     char *screen,
-    char x,
-    char y,
+    Position position,
     char rotation,
     Piece piece
 ) {
     for (int i = 0; i < piece.size; ++i) {
-        Position rotated = calculate_rotation(
+        Position rotated = position_rotate(
             *(piece.definition + i),
             rotation,
             piece.moving_center
         );
 
-        char final_x = rotated.x + x;
-        char final_y = rotated.y + y;
-        if (final_x >= BOARD_SIZE_X) {
+        Position final = position_sum(rotated, position);
+        if (final.x >= BOARD_SIZE_X) {
             return false;
         }
-        if (final_x < 0) {
+        if (final.x < 0) {
             return false;
         }
-        if (final_y >= BOARD_SIZE_Y) {
+        if (final.y >= BOARD_SIZE_Y) {
             return false;
         }
-        if (final_y < 0) {
+        if (final.y < 0) {
             return true;
         }
-        if (*(screen + final_x * BOARD_SIZE_Y + final_y)) {
+        if (*(screen + final.x * BOARD_SIZE_Y + final.y)) {
             return false;
         }
     }
@@ -165,7 +174,7 @@ void draw_piece(
 ) {
     copy_board((char *) screen, (char *) board);
     for (int i = 0; i < piece.size; ++i) {
-        Position rotated = calculate_rotation(
+        Position rotated = position_rotate(
             *(piece.definition + i),
             rotation,
             piece.moving_center
@@ -192,7 +201,11 @@ char place_piece(
     Piece piece,
     enum Colour colour
 ) {
-    if (can_place_piece(board, x, y, rotation, piece)) {
+    Position position = {
+        .x = x,
+        .y = y
+    };
+    if (can_place_piece(board, position, rotation, piece)) {
         draw_piece(
             board,
             screen,
