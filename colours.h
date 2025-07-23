@@ -5,5 +5,6 @@ enum Colour {
     COLOUR_GREEN = 5,
     COLOUR_BLUE = 6,
     COLOUR_DEEP_BLUE = 7,
-    COLOUR_VIOLET = 9
+    COLOUR_VIOLET = 9,
+    COLOUR_WALL = 100
 };

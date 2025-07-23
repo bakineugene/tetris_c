@@ -18,7 +18,7 @@
 #include "avr_renderer.h"
 #else
 #include <stdlib.h>
-#include "sdl_renderer.h"
+#include "sdl2_renderer/renderer.h"
 #endif
 
 #define TETRIS_SOUND_CLEAR_ROW SOUND_DZIN
@@ -178,12 +178,14 @@ char can_place_piece(
     return true;
 }
 
+#define PREDICTION_SIZE 6
+
 void erase_prediction(
     char *board,
     char *screen
 ) {
-    for (int x = BOARD_SIZE_X; x < SCREEN_X; ++x) {
-        for (int y = 0; y < 10; ++y) {
+    for (int x = BOARD_SIZE_X + 1; x < SCREEN_X; ++x) {
+        for (int y = 0; y < PREDICTION_SIZE; ++y) {
             *(screen + x * SCREEN_Y + y) = *(board + x * SCREEN_Y + y) = 0;
         }
     }
@@ -239,8 +241,8 @@ typedef struct PieceDrawDef {
 } PieceDrawDef;
 
 Position prediction_position = {
-    .x = 12,
-    .y = 3
+    .x = 13,
+    .y = 2
 };
 PieceDrawDef next_piece;
 PieceDrawDef select_next_piece(
@@ -349,6 +351,14 @@ int main(int argc, char** argv) {
 	        board[x][y] = false;
 	        screen[x][y] = false;
 	    }
+    }
+
+    for (int y = 0; y < SCREEN_Y; ++y) {
+        screen[BOARD_SIZE_X][y] = COLOUR_WALL;
+    }
+
+    for (int x = BOARD_SIZE_X; x < SCREEN_X; ++x) {
+        screen[x][PREDICTION_SIZE] = COLOUR_WALL;
     }
 
     select_next_piece((char *) screen, (char *) board);

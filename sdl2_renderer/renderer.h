@@ -2,14 +2,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "events.h"
-#include "sdl_renderer_sound.h"
+#include "../events.h"
+#include "sound.h"
 
 #define SDL_MAIN_HANDLED
 #include "SDL2/SDL.h"
 
-#define SCREEN_WIDTH 40 * SCREEN_X
-#define SCREEN_HEIGHT 40 * SCREEN_Y
 #define WINDOW_TITLE "Tetris on SDL2"
 
 static SDL_Window* window;
@@ -54,6 +52,22 @@ enum Event renderer_get_event() {
     return EVENT_EMPTY;
 }
 
+SDL_Texture* wall_texture;
+void init_textures(void) {
+    SDL_Surface* surface = SDL_LoadBMP("./sdl2_renderer/wall.bmp");
+    if (!surface) {
+        printf("Failed to load BMP: %s\n", SDL_GetError());
+    }
+
+    wall_texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+    if (!wall_texture) {
+        printf("Failed to create texture: %s\n", SDL_GetError());
+    }
+}
+
+int side_size;
+
 int renderer_init(void) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS)) {
         printf("Unable to initialize SDL: %s\n", SDL_GetError());
@@ -62,9 +76,14 @@ int renderer_init(void) {
 
     renderer_init_sound();
 
+    SDL_DisplayMode display_mode;
+    SDL_GetCurrentDisplayMode(0, &display_mode);
+
+    side_size = display_mode.h/ 30;
+
     window = SDL_CreateWindow(WINDOW_TITLE,
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+        side_size * SCREEN_X, side_size * SCREEN_Y, SDL_WINDOW_SHOWN);
 
     if (!window) {
         printf("Could not create a window: %s\n", SDL_GetError());
@@ -74,6 +93,7 @@ int renderer_init(void) {
     renderer = SDL_CreateRenderer(window, -1,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
+    init_textures();
     if (!renderer) {
         printf("Could not create a renderer: %s\n", SDL_GetError());
         return -1;
@@ -91,6 +111,7 @@ void renderer_render(char *a) {
 	    for (int y = 0; y < SCREEN_Y; ++y) {
             struct SDLColour colour;
             bool has_colour = true;
+            bool has_texture = false;
             switch(*(a + x * SCREEN_Y + y)) {
                 case COLOUR_RED:
                     colour = renderer_colour_red;
@@ -113,32 +134,40 @@ void renderer_render(char *a) {
                 case COLOUR_VIOLET:
                     colour = renderer_colour_violet;
                     break;
+                case COLOUR_WALL:
+                    has_texture = true;
+                    colour = renderer_colour_white;
+                    break;
                 default:
                     has_colour = false;
                     break;
             }
             if (has_colour) {
                 SDL_Rect rect;
-                rect.x = 0 + x * 8 * 5;
-                rect.y = 0 + y * 8 * 5;
-                rect.w = 8 * 5;
-                rect.h = 8 * 5;
+                rect.x = x * side_size;
+                rect.y = y * side_size;
+                rect.w = side_size;
+                rect.h = side_size;
 
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 80);
                 SDL_RenderDrawRect(renderer, &rect);
-                rect.x += 2;
-                rect.y += 2;
-                rect.w -= 2;
-                rect.h -= 2;
+
+                int side_line_size = side_size / 20;
+
+                if (!has_texture) {
+                    rect.x += side_line_size;
+                    rect.y += side_line_size;
+                    rect.w -= side_line_size;
+                    rect.h -= side_line_size;
+                }
                 SDL_SetRenderDrawColor(renderer, colour.red, colour.green, colour.blue, 80);
                 SDL_RenderFillRect(renderer, &rect);
+                if (has_texture) {
+                    SDL_RenderCopy(renderer, wall_texture, NULL, &rect);
+                }
             }
 	    }
 	}
-
-    // Установка цвета линии (красный)
-    SDL_SetRenderDrawColor(renderer, renderer_colour_white.red, renderer_colour_white.green, renderer_colour_white.blue, 255);
-    SDL_RenderDrawLine(renderer, BOARD_SIZE_X * 8 * 5, 0, BOARD_SIZE_X * 8 * 5, SCREEN_Y * 8 * 5);
 
     SDL_SetRenderDrawColor(renderer, 30, 20, 40, 255);
 
