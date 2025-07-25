@@ -15,10 +15,10 @@
 
 #if defined(__AVR__)
 #include <avr/pgmspace.h>
-#include "avr_renderer/renderer.h"
+#include "avr/renderer.h"
 #else
 #include <stdlib.h>
-#include "sdl2_renderer/renderer.h"
+#include "sdl2/renderer.h"
 #endif
 
 #define TETRIS_SOUND_CLEAR_ROW SOUND_DZIN

@@ -54,7 +54,7 @@ enum Event renderer_get_event() {
 
 SDL_Texture* wall_texture;
 void init_textures(void) {
-    SDL_Surface* surface = SDL_LoadBMP("./sdl2_renderer/wall.bmp");
+    SDL_Surface* surface = SDL_LoadBMP("./sdl2/wall.bmp");
     if (!surface) {
         printf("Failed to load BMP: %s\n", SDL_GetError());
     }
