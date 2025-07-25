@@ -27,7 +27,7 @@ build-sdl: sounds main.c sdl2_renderer/renderer.h sdl2_renderer/sound.h
 	mkdir -p build
 	gcc -Wall main.c -lSDL2 -lSDL2main -o ./build/sdl_tetris
 
-build-avr: sounds main.c avr_renderer.h
+build-avr: sounds main.c avr_renderer/renderer.h avr_renderer/sound.h
 	mkdir -p build
 	avr-gcc main.c -o ./build/main.elf -mmcu=atmega328p -DF_CPU=16000000UL -Os
 	avr-objcopy ./build/main.elf -O ihex ./build/main.hex

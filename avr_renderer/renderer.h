@@ -1,9 +1,9 @@
-#include "events.h"
+#include "./../events.h"
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 
-#include "avr_renderer_sound.h"
+#include "sound.h"
 
 #define START_DATA_TRANSACTION()    PORTB &= ~(1 << PB2)
 #define END_DATA_TRANSACTION()  PORTB |= (1 << PB2)

@@ -15,7 +15,7 @@
 
 #if defined(__AVR__)
 #include <avr/pgmspace.h>
-#include "avr_renderer.h"
+#include "avr_renderer/renderer.h"
 #else
 #include <stdlib.h>
 #include "sdl2_renderer/renderer.h"
