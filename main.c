@@ -56,10 +56,10 @@ enum Colour colours[NUMBER_OF_COLOURS] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELL
 static const char default_rotation = 0;
 
 Piece pieces[NUMBER_OF_PIECES] = {
-    {4, true, {{-1, 0}, {0, 0}, {1, 0}, {2, 0}}},
+    {4, true, {{0, -1}, {0, 0}, {0, 1}, {0, 2}}},
     {4, false, {{0, -1}, {0, 0}, {0, 1}, {-1, 1}}},
     {4, false, {{0, -1}, {0, 0}, {0, 1}, {1, 1}}},
-    {4, true, {{0, 0}, {1, 0}, {1, 1}, {0, 1}}},
+    {4, true, {{0, 0}, {-1, 0}, {-1, -1}, {0, -1}}},
     {4, false, {{0, 0}, {1, 0}, {0, 1}, {-1, 1}}},
     {4, false, {{0, 0}, {1, 0}, {-1, 0}, {0, 1}}},
     {4, false, {{0, 0}, {-1, 0}, {0, 1}, {1, 1}}}

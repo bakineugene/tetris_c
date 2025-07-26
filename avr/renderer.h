@@ -2,6 +2,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/pgmspace.h>
+#include <avr/interrupt.h>
 
 #include "sound.h"
 
@@ -10,6 +11,22 @@
 
 #define RENDERER_EVENT_DELAY 80
 #define NUM_DEVICES 6
+#define MATRIX_SIDE 8
+
+volatile uint8_t dim_border = 0;
+volatile uint8_t dim_counter = 0;
+
+void timer1_init(void) {
+    TCCR1B |= (1 << WGM12);
+    OCR1A = 32;
+    TIMSK1 |= (1 << OCIE1A);
+    TCCR1B |= (1 << CS12) | (1 << CS10);
+}
+
+ISR(TIMER1_COMPA_vect) {
+    if (dim_counter++ > 10) dim_counter = 0;
+    if (dim_counter > 9) dim_border = 0; else dim_border = 1;
+}
 
 void ADC_Init() {
     ADMUX = (1 << REFS0) | (0 << ADLAR);
@@ -67,21 +84,24 @@ void initMatrix() {
 	END_DATA_TRANSACTION();
 }
 
-uint8_t buffer [NUM_DEVICES * 8];	
+uint8_t buffer[NUM_DEVICES * MATRIX_SIDE];
+uint8_t dim_buffer[NUM_DEVICES * MATRIX_SIDE];
 
 void initBuffer() {
-	for(int i = 0; i < NUM_DEVICES * 8; ++i) buffer[i] = 0x00;
+	for(int i = 0; i < NUM_DEVICES * MATRIX_SIDE; ++i) buffer[i] = 0x00;
 }       
 
-void sendBuffer() {   
-   for(int column = 1; column < 9; ++column) {
-       START_DATA_TRANSACTION();
-       for(int i = 0; i < NUM_DEVICES; ++i) writeCommand(column, buffer[column + i*8 - 1]);
-       END_DATA_TRANSACTION();
-   }
+void sendBuffer() {
+    for(int column = 1; column < 9; ++column) {
+        START_DATA_TRANSACTION();
+        if (dim_border == 0) {
+            for(int i = 0; i < NUM_DEVICES; ++i) writeCommand(column, buffer[column + i * MATRIX_SIDE - 1]);
+        } else {
+            for(int i = 0; i < NUM_DEVICES; ++i) writeCommand(column, dim_buffer[column + i * MATRIX_SIDE - 1]);
+        }
+        END_DATA_TRANSACTION();
+    }
 }
-
-/* variables */
 
 int last_event = RENDERER_EVENT_DELAY;
 enum Event renderer_get_event() {
@@ -115,102 +135,57 @@ int renderer_init(void) {
     initBuffer();
     sendBuffer();
     renderer_init_sound();
+    timer1_init();
     return 0;
 }
 
 const uint8_t bit_set = 0b00000001;
 void renderer_render(char *a) {
     for (int i = 0; i < NUM_DEVICES; ++i) {
-        if (i == 5) {
-            uint8_t bit = 0b00000000;
-            for (int column = 0; column < 8; ++column) {
-                char x = column;
+        uint8_t bit = 0b00000000;
+        uint8_t dim_bit = 0b00000000;
+        char x;
+        char y;
+        for (int column = 0; column < MATRIX_SIDE; ++column) {
+            for (int row = 0; row < MATRIX_SIDE; ++row) {
+                bit = bit << 1;
+                dim_bit = dim_bit << 1;
 
-                for (int row = 0; row < 8; ++row) {
-                    bit = bit << 1;
-                    char y = row;
-                    if (*(a + x * SCREEN_Y + y) != 0) {
-                        bit |= bit_set;
-                    }
+                if (i == 5) {
+                    x = column;
+                    y = row;
                 }
-                buffer[NUM_DEVICES * 8 - i * 8 - 1 - column] = bit;
-            }
-        }
-        if (i == 2) {
-            uint8_t bit = 0b00000000;
-            for (int column = 0; column < 8; ++column) {
-                char x = column + 8;
-
-                for (int row = 0; row < 8; ++row) {
-                    bit = bit << 1;
-                    char y = row;
-                    if (*(a + x * SCREEN_Y + y) != 0) {
-                        bit |= bit_set;
-                    }
+                if (i == 2) {
+                    x = column + MATRIX_SIDE;
+                    y = row;
                 }
-                buffer[NUM_DEVICES * 8 - i * 8 - 1 - column] = bit;
-            }
-        }
-        if (i == 1) {
-            uint8_t bit = 0b00000000;
-            for (int column = 0; column < 8; ++column) {
-                char x = column + 8;
-
-                for (int row = 0; row < 8; ++row) {
-                    bit = bit << 1;
-
-                    char y = row + 8;
-                    if (*(a + x * SCREEN_Y + y) != 0) {
-                        bit |= bit_set;
-                    }
+                if (i == 1) {
+                    x = column + MATRIX_SIDE;
+                    y = row + MATRIX_SIDE;
                 }
-                buffer[NUM_DEVICES * 8 - i * 8 - 1 - column] = bit;
-            }
-        }
-        if (i == 4) {
-            uint8_t bit = 0b00000000;
-            for (int column = 0; column < 8; ++column) {
-                char x = column;
-
-                for (int row = 0; row < 8; ++row) {
-                    bit = bit << 1;
-                    char y = row + 8;
-                    if (*(a + x * SCREEN_Y + y) != 0) {
-                        bit |= bit_set;
-                    }
+                if (i == 4) {
+                    x = column;
+                    y = row + MATRIX_SIDE;
                 }
-                buffer[NUM_DEVICES * 8 - i * 8 - 1 - column] = bit;
-            }
-        }
-        if (i == 0) {
-            uint8_t bit = 0b00000000;
-            for (int column = 0; column < 8; ++column) {
-                char x = 8 + 8 - column - 1;
-
-                for (int row = 0; row < 8; ++row) {
-                    bit = bit << 1;
-                    char y = 8 + 8 + 7 - row;
-                    if (*(a + x * SCREEN_Y + y) != 0) {
-                        bit |= bit_set;
-                    }
+                if (i == 0) {
+                    x = MATRIX_SIDE * 2 - column - 1;
+                    y = MATRIX_SIDE * 3 - row - 1;
                 }
-                buffer[NUM_DEVICES * 8 - i * 8 - 1 - column] = bit;
-            }
-        }
-        if (i == 3) {
-            uint8_t bit = 0b00000000;
-            for (int column = 0; column < 8; ++column) {
-                char x = 8 - column - 1;
-
-                for (int row = 0; row < 8; ++row) {
-                    bit = bit << 1;
-                    char y = 8 + 8 + 7 - row;
-                    if (*(a + x * SCREEN_Y + y) != 0) {
-                        bit |= bit_set;
-                    }
+                if (i == 3) {
+                    x = MATRIX_SIDE - column - 1;
+                    y = MATRIX_SIDE * 3 - row - 1;
                 }
-                buffer[NUM_DEVICES * 8 - i * 8 - 1 - column] = bit;
+
+                if (*(a + x * SCREEN_Y + y) != 0) {
+                    bit |= bit_set;
+                    dim_bit |= bit_set;
+                }
+                if (*(a + x * SCREEN_Y + y) == COLOUR_WALL) {
+                    dim_bit = dim_bit &~ bit_set;
+                }
             }
+            buffer[NUM_DEVICES * MATRIX_SIDE - i * MATRIX_SIDE - 1 - column] = bit;
+            dim_buffer[NUM_DEVICES * MATRIX_SIDE - i * MATRIX_SIDE - 1 - column] = dim_bit;
         }
     }
     sendBuffer();	
@@ -219,8 +194,9 @@ void renderer_render(char *a) {
 void renderer_delay(int delay) {
     last_event -= delay;
     while (delay > 0) {
-        delay = delay - 10;
-        _delay_ms(10);
+        sendBuffer();
+        delay = delay - 1;
+        _delay_ms(1);
     }
 }
 
