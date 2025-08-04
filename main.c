@@ -265,26 +265,22 @@ PieceDrawDef select_next_piece(Tetris *game) {
     return result_piece;
 }
 
-void game_over(
-    uint8_t *screen,
-    uint8_t *board
-) {
+void game_over(Tetris* game) {
     for (int y = 0; y < BOARD_SIZE_Y; ++y) {
         for (int x = 0; x < BOARD_SIZE_X; ++x) {
-            *(screen + x * SCREEN_Y + y) = COLOUR_RED;
+            game->screen[x][y] = COLOUR_RED;
         }
 
-        renderer_render((uint8_t *) screen);
+        renderer_render((uint8_t *) game->screen);
         renderer_delay(10);
     }
 
     for (int y = SCREEN_Y - 1; y >= 0; --y) {
         for (int x = 0; x < BOARD_SIZE_X; ++x) {
-            *(screen + x * SCREEN_Y + y) = 0;
-            *(board + x * SCREEN_Y + y) = 0;
+            game->screen[x][y] = game->board[x][y] = 0;
         }
 
-        renderer_render((uint8_t *) screen);
+        renderer_render((uint8_t *) game->screen);
         renderer_delay(10);
     }
 }
@@ -330,7 +326,7 @@ int piece_down(
         piece->position = next_piece.position;
         piece->colour = next_piece.colour;
         if (!place_piece(game, piece->position, piece->rotation, piece->piece, piece->colour)) {
-            game_over((uint8_t *) screen, (uint8_t *) board);
+            game_over(game);
         }
     }
     return 0;
