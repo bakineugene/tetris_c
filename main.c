@@ -161,8 +161,8 @@ int calculate_rotation_x_shift(
     return shift;
 }
 
-uint8_t can_place_piece(
-    uint8_t *screen,
+bool can_place_piece(
+    Tetris* game,
     Position position,
     uint8_t rotation,
     Piece piece
@@ -184,10 +184,7 @@ uint8_t can_place_piece(
         if (final.y >= BOARD_SIZE_Y) {
             return false;
         }
-        if (final.y < 0) {
-            return true;
-        }
-        if (*(screen + final.x * BOARD_SIZE_Y + final.y)) {
+        if (game->board[final.x][final.y]) {
             return false;
         }
     }
@@ -239,7 +236,7 @@ uint8_t place_piece(
     Piece piece,
     enum Colour colour
 ) {
-    if (can_place_piece((uint8_t *) game->board, position, rotation, piece)) {
+    if (can_place_piece(game, position, rotation, piece)) {
         draw_piece(game, position, rotation, piece, colour);
         return true;
     }
@@ -250,7 +247,7 @@ PieceDrawDef select_next_piece(Tetris *game) {
     PieceDrawDef result_piece = game->next_piece;
     PieceDrawDef new_piece = {
         pieces[rand() % NUMBER_OF_PIECES],
-        {START_X, 0},
+        {START_X, 1},
         DEFAULT_ROTATION,
         colours[rand() % NUMBER_OF_COLOURS]
     };
