@@ -50,6 +50,7 @@ typedef struct Tetris {
     int time;
     bool running;
     PieceDrawDef next_piece;
+    PieceDrawDef piece;
     uint8_t board[SCREEN_X][SCREEN_Y];
     uint8_t screen[SCREEN_X][SCREEN_Y];
 } Tetris;
@@ -262,7 +263,7 @@ PieceDrawDef select_next_piece(Tetris *game) {
         game->next_piece.piece,
         game->next_piece.colour
     );
-    return result_piece;
+    return game->piece = result_piece;
 }
 
 void game_over(Tetris* game) {
@@ -354,7 +355,7 @@ int main(int argc, char** argv) {
     }
 
     select_next_piece(&game);
-    PieceDrawDef piece = select_next_piece(&game);
+    select_next_piece(&game);
     while (game.running) {
         enum Event event = EVENT_EMPTY;
         do {
@@ -366,53 +367,53 @@ int main(int argc, char** argv) {
                 }
                 case EVENT_LEFT: {
                     Position new_position = {
-                        .x = piece.position.x - 1,
-                        .y = piece.position.y
+                        .x = game.piece.position.x - 1,
+                        .y = game.piece.position.y
                     };
-                    if (place_piece(&game, new_position, piece.rotation, piece.piece, piece.colour)) {
-                        piece.position = new_position;
+                    if (place_piece(&game, new_position, game.piece.rotation, game.piece.piece, game.piece.colour)) {
+                        game.piece.position = new_position;
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_RIGHT: {
                     Position new_position = {
-                        .x = piece.position.x + 1,
-                        .y = piece.position.y
+                        .x = game.piece.position.x + 1,
+                        .y = game.piece.position.y
                     };
-                    if (place_piece(&game, new_position, piece.rotation, piece.piece, piece.colour)) {
-                        piece.position = new_position;
+                    if (place_piece(&game, new_position, game.piece.rotation, game.piece.piece, game.piece.colour)) {
+                        game.piece.position = new_position;
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_DOWN: {
-                    if (piece_down(&game, &piece)) {
+                    if (piece_down(&game, &game.piece)) {
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_UP: {
-                    while (piece_down(&game, &piece)) { renderer_delay(12); } 
+                    while (piece_down(&game, &game.piece)) { renderer_delay(12); } 
                     renderer_play_sound(TETRIS_SOUND_PLACE);
                     renderer_delay(200);
                     break;
                 }
                 case EVENT_SPACE: {
-                    uint8_t next_rotation = piece.rotation + 1;
+                    uint8_t next_rotation = game.piece.rotation + 1;
                     if (next_rotation > 3) next_rotation = 0;
                     uint8_t shift = calculate_rotation_x_shift(
-                        piece.position,
+                        game.piece.position,
                         next_rotation,
-                        piece.piece
+                        game.piece.piece
                     );
                     Position new_position = {
-                        .x = piece.position.x + shift,
-                        .y = piece.position.y
+                        .x = game.piece.position.x + shift,
+                        .y = game.piece.position.y
                     };
-                    if (place_piece(&game, new_position, next_rotation, piece.piece, piece.colour)) {
-                        piece.rotation = next_rotation;
-                        piece.position = new_position;
+                    if (place_piece(&game, new_position, next_rotation, game.piece.piece, game.piece.colour)) {
+                        game.piece.rotation = next_rotation;
+                        game.piece.position = new_position;
                         renderer_play_sound(TETRIS_SOUND_TURN);
                         renderer_delay(200);
                     }
@@ -426,7 +427,7 @@ int main(int argc, char** argv) {
 
         if (game.time == 300) {
             game.time = 0;
-            piece_down(&game, &piece);
+            piece_down(&game, &game.piece);
         }
 
         game.time += 10;
