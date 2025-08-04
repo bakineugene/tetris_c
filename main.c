@@ -305,26 +305,16 @@ void check_board(Tetris* game) {
     renderer_render((uint8_t *) game->screen);
 }
 
-int piece_down(
-    Tetris* game,
-    PieceDrawDef *piece
-) {
-    Position new_position = {
-        .x = piece->position.x,
-        .y = piece->position.y + 1
-    };
-    if (place_piece(game, new_position, piece->rotation, piece->piece, piece->colour)) {
-        piece->position = new_position;
+int piece_down(Tetris* game) {
+    Position new_position = position_sum(game->piece.position, (Position) {.x = 0, .y = 1});
+    if (place_piece(game, new_position, game->piece.rotation, game->piece.piece, game->piece.colour)) {
+        game->piece.position = new_position;
         return 1;
     } else {
         copy_screen_to_board(game);
         check_board(game);
-        PieceDrawDef next_piece = select_next_piece(game);
-        piece->piece = next_piece.piece;
-        piece->rotation = next_piece.rotation;
-        piece->position = next_piece.position;
-        piece->colour = next_piece.colour;
-        if (!place_piece(game, piece->position, piece->rotation, piece->piece, piece->colour)) {
+        select_next_piece(game);
+        if (!place_piece(game, game->piece.position, game->piece.rotation, game->piece.piece, game->piece.colour)) {
             game_over(game);
         }
     }
@@ -388,13 +378,13 @@ int main(int argc, char** argv) {
                     break;
                 }
                 case EVENT_DOWN: {
-                    if (piece_down(&game, &game.piece)) {
+                    if (piece_down(&game)) {
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_UP: {
-                    while (piece_down(&game, &game.piece)) { renderer_delay(12); } 
+                    while (piece_down(&game)) { renderer_delay(12); } 
                     renderer_play_sound(TETRIS_SOUND_PLACE);
                     renderer_delay(200);
                     break;
@@ -427,7 +417,7 @@ int main(int argc, char** argv) {
 
         if (game.time == 300) {
             game.time = 0;
-            piece_down(&game, &game.piece);
+            piece_down(&game);
         }
 
         game.time += 10;
