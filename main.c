@@ -26,17 +26,6 @@
 #define TETRIS_SOUND_PLACE SOUND_CLICK
 #define TETRIS_SOUND_TURN SOUND_SPOON
 
-void copy_board(
-    char *screen,
-    char *board
-) {
-    for (int x = 0; x < BOARD_SIZE_X; ++x) {
-        for (int y = 0; y < BOARD_SIZE_Y; ++y) {
-            *(screen + x * SCREEN_Y + y) = *(board + x * SCREEN_Y + y);
-        }
-    }
-}
-
 typedef struct Position {
     char x;
     char y;
@@ -47,6 +36,30 @@ typedef struct Piece {
     char moving_center;
     Position definition[4];
 } Piece;
+
+typedef struct PieceDrawDef {
+    Piece piece;
+    Position position;
+    char rotation;
+    enum Colour colour;
+} PieceDrawDef;
+
+typedef struct Tetris {
+    int time;
+    bool running;
+    PieceDrawDef next_piece;
+} Tetris;
+
+void copy_board(
+    char *screen,
+    char *board
+) {
+    for (int x = 0; x < BOARD_SIZE_X; ++x) {
+        for (int y = 0; y < BOARD_SIZE_Y; ++y) {
+            *(screen + x * SCREEN_Y + y) = *(board + x * SCREEN_Y + y);
+        }
+    }
+}
 
 #define NUMBER_OF_COLOURS 7
 enum Colour colours[NUMBER_OF_COLOURS] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET}; 
@@ -233,32 +246,32 @@ char place_piece(
     return false;
 }
 
-typedef struct PieceDrawDef {
-    Piece piece;
-    Position position;
-    char rotation;
-    enum Colour colour;
-} PieceDrawDef;
-
 Position prediction_position = {
     .x = 13,
     .y = 2
 };
-PieceDrawDef next_piece;
 PieceDrawDef select_next_piece(
+    Tetris *game,
     char *screen,
     char *board
 ) {
-    PieceDrawDef result_piece = next_piece;
+    PieceDrawDef result_piece = game->next_piece;
     PieceDrawDef new_piece = {
         pieces[rand() % NUMBER_OF_PIECES],
         {START_X, 0},
         default_rotation,
         colours[rand() % NUMBER_OF_COLOURS]
     };
-    next_piece = new_piece;
+    game->next_piece = new_piece;
     erase_prediction((char *) board, (char *) screen);
-    draw_piece((char *) board, (char *) screen, prediction_position, default_rotation, next_piece.piece, next_piece.colour);
+    draw_piece(
+        (char *) board,
+        (char *) screen,
+        prediction_position,
+        default_rotation,
+        game->next_piece.piece,
+        game->next_piece.colour
+    );
     return result_piece;
 }
 
@@ -308,10 +321,8 @@ void check_board(
     renderer_render((char *) screen);
 }
 
-static int game_time = 0;
-static char running = true;
-
 int piece_down(
+    Tetris* game,
     char *board,
     char *screen,
     PieceDrawDef *piece
@@ -326,7 +337,7 @@ int piece_down(
     } else {
         copy_board((char *) board, (char *) screen);
         check_board((char *) screen, (char *) board);
-        PieceDrawDef next_piece = select_next_piece((char *) screen, (char *) board);
+        PieceDrawDef next_piece = select_next_piece(game, (char *) screen, (char *) board);
         piece->piece = next_piece.piece;
         piece->rotation = next_piece.rotation;
         piece->position = next_piece.position;
@@ -339,6 +350,10 @@ int piece_down(
 }
 
 int main(int argc, char** argv) {
+    Tetris game;
+    game.time = 0;
+    game.running = true;
+
     srand(time(NULL));
     
     renderer_init();
@@ -361,15 +376,15 @@ int main(int argc, char** argv) {
         screen[x][PREDICTION_SIZE] = COLOUR_WALL;
     }
 
-    select_next_piece((char *) screen, (char *) board);
-    PieceDrawDef piece = select_next_piece((char *) screen, (char *) board);
-    while (running) {
+    select_next_piece(&game, (char *) screen, (char *) board);
+    PieceDrawDef piece = select_next_piece(&game, (char *) screen, (char *) board);
+    while (game.running) {
         enum Event event = EVENT_EMPTY;
         do {
             event = renderer_get_event();
             switch(event) {
                 case EVENT_EXIT: {
-                    running = false;
+                    game.running = false;
                     break;
                 }
                 case EVENT_LEFT: {
@@ -395,13 +410,13 @@ int main(int argc, char** argv) {
                     break;
                 }
                 case EVENT_DOWN: {
-                    if (piece_down((char *) board, (char *) screen, &piece)) {
+                    if (piece_down(&game, (char *) board, (char *) screen, &piece)) {
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_UP: {
-                    while (piece_down((char *) board, (char *) screen, &piece)) { renderer_delay(12); } 
+                    while (piece_down(&game, (char *) board, (char *) screen, &piece)) { renderer_delay(12); } 
                     renderer_play_sound(TETRIS_SOUND_PLACE);
                     renderer_delay(200);
                     break;
@@ -432,12 +447,12 @@ int main(int argc, char** argv) {
             }
         } while (event != EVENT_EMPTY);
 
-        if (game_time == 300) {
-            game_time = 0;
-            piece_down((char *) board, (char *) screen, &piece);
+        if (game.time == 300) {
+            game.time = 0;
+            piece_down(&game, (char *) board, (char *) screen, &piece);
         }
 
-        game_time += 10;
+        game.time += 10;
         renderer_delay(10);
 
     }
