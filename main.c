@@ -247,11 +247,7 @@ char place_piece(
     return false;
 }
 
-PieceDrawDef select_next_piece(
-    Tetris *game,
-    char *screen,
-    char *board
-) {
+PieceDrawDef select_next_piece(Tetris *game) {
     PieceDrawDef result_piece = game->next_piece;
     PieceDrawDef new_piece = {
         pieces[rand() % NUMBER_OF_PIECES],
@@ -260,10 +256,10 @@ PieceDrawDef select_next_piece(
         colours[rand() % NUMBER_OF_COLOURS]
     };
     game->next_piece = new_piece;
-    erase_prediction((char *) board, (char *) screen);
+    erase_prediction((char *) game->board, (char *) game->screen);
     draw_piece(
-        (char *) board,
-        (char *) screen,
+        (char *) game->board,
+        (char *) game->screen,
         (Position) { .x = 13, .y = 2 },
         DEFAULT_ROTATION,
         game->next_piece.piece,
@@ -334,7 +330,7 @@ int piece_down(
     } else {
         copy_board((char *) board, (char *) screen);
         check_board((char *) screen, (char *) board);
-        PieceDrawDef next_piece = select_next_piece(game, (char *) screen, (char *) board);
+        PieceDrawDef next_piece = select_next_piece(game);
         piece->piece = next_piece.piece;
         piece->rotation = next_piece.rotation;
         piece->position = next_piece.position;
@@ -347,13 +343,12 @@ int piece_down(
 }
 
 int main(int argc, char** argv) {
+    srand(time(NULL));
+    renderer_init();
+
     Tetris game;
     game.time = 0;
     game.running = true;
-
-    srand(time(NULL));
-    
-    renderer_init();
 
     for (int x = 0; x < SCREEN_X; ++x) {
         for (int y = 0; y < SCREEN_Y; ++y) {
@@ -370,8 +365,8 @@ int main(int argc, char** argv) {
         game.screen[x][PREDICTION_SIZE] = COLOUR_WALL;
     }
 
-    select_next_piece(&game, (char *) game.screen, (char *) game.board);
-    PieceDrawDef piece = select_next_piece(&game, (char *) game.screen, (char *) game.board);
+    select_next_piece(&game);
+    PieceDrawDef piece = select_next_piece(&game);
     while (game.running) {
         enum Event event = EVENT_EMPTY;
         do {
