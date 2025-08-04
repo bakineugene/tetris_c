@@ -233,15 +233,14 @@ void draw_piece(
 }
 
 char place_piece(
-    char *board,
-    char *screen,
+    Tetris* game,
     Position position,
     char rotation,
     Piece piece,
     enum Colour colour
 ) {
-    if (can_place_piece(board, position, rotation, piece)) {
-        draw_piece(board, screen, position, rotation, piece, colour);
+    if (can_place_piece((char *) game->board, position, rotation, piece)) {
+        draw_piece((char *) game->board, (char *) game->screen, position, rotation, piece, colour);
         return true;
     }
     return false;
@@ -324,7 +323,7 @@ int piece_down(
         .x = piece->position.x,
         .y = piece->position.y + 1
     };
-    if (place_piece((char *) board, (char *) screen, new_position, piece->rotation, piece->piece, piece->colour)) {
+    if (place_piece(game, new_position, piece->rotation, piece->piece, piece->colour)) {
         piece->position = new_position;
         return 1;
     } else {
@@ -335,7 +334,7 @@ int piece_down(
         piece->rotation = next_piece.rotation;
         piece->position = next_piece.position;
         piece->colour = next_piece.colour;
-        if (!place_piece((char *) board, (char *) screen, piece->position, piece->rotation, piece->piece, piece->colour)) {
+        if (!place_piece(game, piece->position, piece->rotation, piece->piece, piece->colour)) {
             game_over((char *) screen, (char *) board);
         }
     }
@@ -381,7 +380,7 @@ int main(int argc, char** argv) {
                         .x = piece.position.x - 1,
                         .y = piece.position.y
                     };
-                    if (place_piece((char *) game.board, (char *) game.screen, new_position, piece.rotation, piece.piece, piece.colour)) {
+                    if (place_piece(&game, new_position, piece.rotation, piece.piece, piece.colour)) {
                         piece.position = new_position;
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
@@ -392,7 +391,7 @@ int main(int argc, char** argv) {
                         .x = piece.position.x + 1,
                         .y = piece.position.y
                     };
-                    if (place_piece((char *) game.board, (char *) game.screen, new_position, piece.rotation, piece.piece, piece.colour)) {
+                    if (place_piece(&game, new_position, piece.rotation, piece.piece, piece.colour)) {
                         piece.position = new_position;
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
@@ -422,7 +421,7 @@ int main(int argc, char** argv) {
                         .x = piece.position.x + shift,
                         .y = piece.position.y
                     };
-                    if (place_piece((char *) game.board, (char *) game.screen, new_position, next_rotation, piece.piece, piece.colour)) {
+                    if (place_piece(&game, new_position, next_rotation, piece.piece, piece.colour)) {
                         piece.rotation = next_rotation;
                         piece.position = new_position;
                         renderer_play_sound(TETRIS_SOUND_TURN);
