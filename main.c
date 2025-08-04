@@ -306,8 +306,6 @@ void check_board(Tetris* game) {
 
 int piece_down(
     Tetris* game,
-    uint8_t *board,
-    uint8_t *screen,
     PieceDrawDef *piece
 ) {
     Position new_position = {
@@ -389,13 +387,13 @@ int main(int argc, char** argv) {
                     break;
                 }
                 case EVENT_DOWN: {
-                    if (piece_down(&game, (uint8_t *) game.board, (uint8_t *) game.screen, &piece)) {
+                    if (piece_down(&game, &piece)) {
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_UP: {
-                    while (piece_down(&game, (uint8_t *) game.board, (uint8_t *) game.screen, &piece)) { renderer_delay(12); } 
+                    while (piece_down(&game, &piece)) { renderer_delay(12); } 
                     renderer_play_sound(TETRIS_SOUND_PLACE);
                     renderer_delay(200);
                     break;
@@ -428,7 +426,7 @@ int main(int argc, char** argv) {
 
         if (game.time == 300) {
             game.time = 0;
-            piece_down(&game, (uint8_t *) game.board, (uint8_t *) game.screen, &piece);
+            piece_down(&game, &piece);
         }
 
         game.time += 10;
