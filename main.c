@@ -54,13 +54,18 @@ typedef struct Tetris {
     uint8_t screen[SCREEN_X][SCREEN_Y];
 } Tetris;
 
-void copy_board(
-    uint8_t *screen,
-    uint8_t *board
-) {
+void copy_board_to_screen(Tetris* game) {
     for (int x = 0; x < BOARD_SIZE_X; ++x) {
         for (int y = 0; y < BOARD_SIZE_Y; ++y) {
-            *(screen + x * SCREEN_Y + y) = *(board + x * SCREEN_Y + y);
+            game->screen[x][y] = game->board[x][y];
+        }
+    }
+}
+
+void copy_screen_to_board(Tetris* game) {
+    for (int x = 0; x < BOARD_SIZE_X; ++x) {
+        for (int y = 0; y < BOARD_SIZE_Y; ++y) {
+            game->board[x][y] = game->screen[x][y];
         }
     }
 }
@@ -208,7 +213,7 @@ void draw_piece(
     Piece piece,
     enum Colour colour
 ) {
-    copy_board((uint8_t *) game->screen, (uint8_t *) game->board);
+    copy_board_to_screen(game);
     for (int i = 0; i < piece.size; ++i) {
         Position rotated = position_rotate(
             *(piece.definition + i),
@@ -284,16 +289,13 @@ void game_over(
     }
 }
 
-void check_board(
-    uint8_t *board,
-    uint8_t *screen
-) {
+void check_board(Tetris* game) {
     int by = BOARD_SIZE_Y - 1;
     for (int y = BOARD_SIZE_Y - 1; y > 0; --y) {
         uint8_t row_is_full = true;
         for (int x = 0; x < BOARD_SIZE_X; ++x) {
-            row_is_full = row_is_full && *(board + x * SCREEN_Y + y);
-            *(board + x * SCREEN_Y + by) = *(board + x * SCREEN_Y + y);
+            row_is_full = row_is_full && game->board[x][y];
+            game->board[x][by] = game->board[x][y];
         }
         if (!row_is_full) {
             --by;
@@ -302,8 +304,8 @@ void check_board(
             renderer_delay(TETRIS_SOUND_CLEAR_ROW.length / 16);
         }
     }
-    copy_board((uint8_t *) screen, (uint8_t *) board);
-    renderer_render((uint8_t *) screen);
+    copy_board_to_screen(game);
+    renderer_render((uint8_t *) game->screen);
 }
 
 int piece_down(
@@ -320,8 +322,8 @@ int piece_down(
         piece->position = new_position;
         return 1;
     } else {
-        copy_board((uint8_t *) board, (uint8_t *) screen);
-        check_board((uint8_t *) screen, (uint8_t *) board);
+        copy_screen_to_board(game);
+        check_board(game);
         PieceDrawDef next_piece = select_next_piece(game);
         piece->piece = next_piece.piece;
         piece->rotation = next_piece.rotation;
