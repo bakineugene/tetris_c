@@ -193,13 +193,10 @@ bool can_place_piece(
 
 #define PREDICTION_SIZE 6
 
-void erase_prediction(
-    uint8_t *board,
-    uint8_t *screen
-) {
+void erase_prediction(Tetris* game) {
     for (int x = BOARD_SIZE_X + 1; x < SCREEN_X; ++x) {
         for (int y = 0; y < PREDICTION_SIZE; ++y) {
-            *(screen + x * SCREEN_Y + y) = *(board + x * SCREEN_Y + y) = 0;
+            game->screen[x][y] = game->board[x][y] = 0;
         }
     }
 }
@@ -252,7 +249,7 @@ PieceDrawDef select_next_piece(Tetris *game) {
         colours[rand() % NUMBER_OF_COLOURS]
     };
     game->next_piece = new_piece;
-    erase_prediction((uint8_t *) game->board, (uint8_t *) game->screen);
+    erase_prediction(game);
     draw_piece(
         game,
         (Position) { .x = 13, .y = 2 },
