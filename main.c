@@ -1,4 +1,6 @@
 #include <time.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #define true 1
 #define false 0
@@ -27,20 +29,20 @@
 #define TETRIS_SOUND_TURN SOUND_SPOON
 
 typedef struct Position {
-    char x;
-    char y;
+    uint8_t x;
+    uint8_t y;
 } Position;
 
 typedef struct Piece {
-    char size;
-    char moving_center;
+    uint8_t size;
+    uint8_t moving_center;
     Position definition[4];
 } Piece;
 
 typedef struct PieceDrawDef {
     Piece piece;
     Position position;
-    char rotation;
+    uint8_t rotation;
     enum Colour colour;
 } PieceDrawDef;
 
@@ -48,13 +50,13 @@ typedef struct Tetris {
     int time;
     bool running;
     PieceDrawDef next_piece;
-    char board[SCREEN_X][SCREEN_Y];
-    char screen[SCREEN_X][SCREEN_Y];
+    uint8_t board[SCREEN_X][SCREEN_Y];
+    uint8_t screen[SCREEN_X][SCREEN_Y];
 } Tetris;
 
 void copy_board(
-    char *screen,
-    char *board
+    uint8_t *screen,
+    uint8_t *board
 ) {
     for (int x = 0; x < BOARD_SIZE_X; ++x) {
         for (int y = 0; y < BOARD_SIZE_Y; ++y) {
@@ -92,8 +94,8 @@ Position position_sum(
 
 Position position_rotate(
     Position position,
-    char rotation,
-    char moving_center
+    uint8_t rotation,
+    uint8_t moving_center
 ) {
     Position result;
 
@@ -135,7 +137,7 @@ Position position_rotate(
 
 int calculate_rotation_x_shift(
     Position position,
-    char rotation,
+    uint8_t rotation,
     Piece piece
 ) {
     int shift = 0;
@@ -159,10 +161,10 @@ int calculate_rotation_x_shift(
     return shift;
 }
 
-char can_place_piece(
-    char *screen,
+uint8_t can_place_piece(
+    uint8_t *screen,
     Position position,
-    char rotation,
+    uint8_t rotation,
     Piece piece
 ) {
     for (int i = 0; i < piece.size; ++i) {
@@ -195,8 +197,8 @@ char can_place_piece(
 #define PREDICTION_SIZE 6
 
 void erase_prediction(
-    char *board,
-    char *screen
+    uint8_t *board,
+    uint8_t *screen
 ) {
     for (int x = BOARD_SIZE_X + 1; x < SCREEN_X; ++x) {
         for (int y = 0; y < PREDICTION_SIZE; ++y) {
@@ -206,14 +208,13 @@ void erase_prediction(
 }
 
 void draw_piece(
-    char *board,
-    char *screen,
+    Tetris* game,
     Position position,
-    char rotation,
+    uint8_t rotation,
     Piece piece,
     enum Colour colour
 ) {
-    copy_board((char *) screen, (char *) board);
+    copy_board((uint8_t *) game->screen, (uint8_t *) game->board);
     for (int i = 0; i < piece.size; ++i) {
         Position rotated = position_rotate(
             *(piece.definition + i),
@@ -223,24 +224,23 @@ void draw_piece(
 
         Position final = position_sum(position, rotated);
         if (final.y >= 0) {
-            char* screen_colour = screen + final.x * BOARD_SIZE_Y + final.y;
-            if (*screen_colour == 0) {
-                *screen_colour = colour;
+            if (game->screen[final.x][final.y] == 0) {
+                game->screen[final.x][final.y] = colour;
             }
         }
     }
-    renderer_render((char *) screen);
+    renderer_render((uint8_t *) game->screen);
 }
 
-char place_piece(
+uint8_t place_piece(
     Tetris* game,
     Position position,
-    char rotation,
+    uint8_t rotation,
     Piece piece,
     enum Colour colour
 ) {
-    if (can_place_piece((char *) game->board, position, rotation, piece)) {
-        draw_piece((char *) game->board, (char *) game->screen, position, rotation, piece, colour);
+    if (can_place_piece((uint8_t *) game->board, position, rotation, piece)) {
+        draw_piece(game, position, rotation, piece, colour);
         return true;
     }
     return false;
@@ -255,10 +255,9 @@ PieceDrawDef select_next_piece(Tetris *game) {
         colours[rand() % NUMBER_OF_COLOURS]
     };
     game->next_piece = new_piece;
-    erase_prediction((char *) game->board, (char *) game->screen);
+    erase_prediction((uint8_t *) game->board, (uint8_t *) game->screen);
     draw_piece(
-        (char *) game->board,
-        (char *) game->screen,
+        game,
         (Position) { .x = 13, .y = 2 },
         DEFAULT_ROTATION,
         game->next_piece.piece,
@@ -268,15 +267,15 @@ PieceDrawDef select_next_piece(Tetris *game) {
 }
 
 void game_over(
-    char *screen,
-    char *board
+    uint8_t *screen,
+    uint8_t *board
 ) {
     for (int y = 0; y < BOARD_SIZE_Y; ++y) {
         for (int x = 0; x < BOARD_SIZE_X; ++x) {
             *(screen + x * SCREEN_Y + y) = COLOUR_RED;
         }
 
-        renderer_render((char *) screen);
+        renderer_render((uint8_t *) screen);
         renderer_delay(10);
     }
 
@@ -286,18 +285,18 @@ void game_over(
             *(board + x * SCREEN_Y + y) = 0;
         }
 
-        renderer_render((char *) screen);
+        renderer_render((uint8_t *) screen);
         renderer_delay(10);
     }
 }
 
 void check_board(
-    char *board,
-    char *screen
+    uint8_t *board,
+    uint8_t *screen
 ) {
     int by = BOARD_SIZE_Y - 1;
     for (int y = BOARD_SIZE_Y - 1; y > 0; --y) {
-        char row_is_full = true;
+        uint8_t row_is_full = true;
         for (int x = 0; x < BOARD_SIZE_X; ++x) {
             row_is_full = row_is_full && *(board + x * SCREEN_Y + y);
             *(board + x * SCREEN_Y + by) = *(board + x * SCREEN_Y + y);
@@ -309,14 +308,14 @@ void check_board(
             renderer_delay(TETRIS_SOUND_CLEAR_ROW.length / 16);
         }
     }
-    copy_board((char *) screen, (char *) board);
-    renderer_render((char *) screen);
+    copy_board((uint8_t *) screen, (uint8_t *) board);
+    renderer_render((uint8_t *) screen);
 }
 
 int piece_down(
     Tetris* game,
-    char *board,
-    char *screen,
+    uint8_t *board,
+    uint8_t *screen,
     PieceDrawDef *piece
 ) {
     Position new_position = {
@@ -327,15 +326,15 @@ int piece_down(
         piece->position = new_position;
         return 1;
     } else {
-        copy_board((char *) board, (char *) screen);
-        check_board((char *) screen, (char *) board);
+        copy_board((uint8_t *) board, (uint8_t *) screen);
+        check_board((uint8_t *) screen, (uint8_t *) board);
         PieceDrawDef next_piece = select_next_piece(game);
         piece->piece = next_piece.piece;
         piece->rotation = next_piece.rotation;
         piece->position = next_piece.position;
         piece->colour = next_piece.colour;
         if (!place_piece(game, piece->position, piece->rotation, piece->piece, piece->colour)) {
-            game_over((char *) screen, (char *) board);
+            game_over((uint8_t *) screen, (uint8_t *) board);
         }
     }
     return 0;
@@ -398,21 +397,21 @@ int main(int argc, char** argv) {
                     break;
                 }
                 case EVENT_DOWN: {
-                    if (piece_down(&game, (char *) game.board, (char *) game.screen, &piece)) {
+                    if (piece_down(&game, (uint8_t *) game.board, (uint8_t *) game.screen, &piece)) {
                         renderer_play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_UP: {
-                    while (piece_down(&game, (char *) game.board, (char *) game.screen, &piece)) { renderer_delay(12); } 
+                    while (piece_down(&game, (uint8_t *) game.board, (uint8_t *) game.screen, &piece)) { renderer_delay(12); } 
                     renderer_play_sound(TETRIS_SOUND_PLACE);
                     renderer_delay(200);
                     break;
                 }
                 case EVENT_SPACE: {
-                    char next_rotation = piece.rotation + 1;
+                    uint8_t next_rotation = piece.rotation + 1;
                     if (next_rotation > 3) next_rotation = 0;
-                    char shift = calculate_rotation_x_shift(
+                    uint8_t shift = calculate_rotation_x_shift(
                         piece.position,
                         next_rotation,
                         piece.piece
@@ -437,7 +436,7 @@ int main(int argc, char** argv) {
 
         if (game.time == 300) {
             game.time = 0;
-            piece_down(&game, (char *) game.board, (char *) game.screen, &piece);
+            piece_down(&game, (uint8_t *) game.board, (uint8_t *) game.screen, &piece);
         }
 
         game.time += 10;

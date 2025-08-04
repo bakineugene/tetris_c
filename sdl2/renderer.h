@@ -15,9 +15,9 @@ static SDL_Renderer* renderer;
 static SDL_Event event;
 
 struct SDLColour {
-    char red;
-    char green;
-    char blue;
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
 };
 
 static struct SDLColour renderer_colour_red = { 196, 54, 56 };
@@ -104,7 +104,7 @@ int renderer_init(void) {
     return 0;
 }
 
-void renderer_render(char *a) {
+void renderer_render(uint8_t *a) {
     SDL_RenderClear(renderer);
 
 	for (int x = 0; x < SCREEN_X; ++x) {
