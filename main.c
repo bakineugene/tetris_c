@@ -2,9 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define true 1
-#define false 0
-
 #define SCREEN_X 16
 #define SCREEN_Y 24
 
@@ -12,6 +9,7 @@
 #define BOARD_SIZE_Y 24 
 
 #define START_X 4
+#define START_Y 1
 
 #include "colours.h"
 
@@ -241,7 +239,7 @@ PieceDrawDef select_next_piece(Tetris *game) {
     erase_prediction(game);
     draw_piece(game, game->next_piece);
 
-    result_piece.position = (Position) {.x = START_X, .y = 1};
+    result_piece.position = (Position) {.x = START_X, .y = START_Y};
     result_piece.rotation = DEFAULT_ROTATION;
     return game->piece = result_piece;
 }
