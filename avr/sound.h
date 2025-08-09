@@ -3,11 +3,6 @@
 #include <avr/pgmspace.h>
 
 #include "./../sounds.h"
-#include "./../build/sounds/dzin.h"
-#include "./../build/sounds/bump.h"
-#include "./../build/sounds/spoon.h"
-#include "./../build/sounds/spoon2.h"
-#include "./../build/sounds/click.h"
 
 #define SAMPLE_RATE 8000
 #define PWM_TOP 255

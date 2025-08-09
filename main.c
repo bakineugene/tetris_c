@@ -1,3 +1,5 @@
+#include "renderer.h"
+
 #if defined(__AVR__)
 #include "avr/renderer.h"
 #else

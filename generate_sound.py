@@ -14,6 +14,8 @@ def wav_to_progmem(sound_name):
             data = wav.readframes(params.nframes)
             
             with open("build/sounds/" + sound_name + ".h", 'w') as f:
+                f.write(f"#pragma once\n")
+                f.write(f"#include \"../../sounds.h\"\n")
                 f.write(f"#define SOUND_{sound_name.upper()}_LENGTH {len(data)}\n")
                 f.write(f"#if defined(__AVR__)\n")
                 f.write(f"const uint8_t SOUND_{sound_name.upper()}_DATA[SOUND_{sound_name.upper()}_LENGTH] PROGMEM = {{\n")

@@ -23,9 +23,9 @@ build/sounds/click.h: sounds/click.wav
 
 sounds: build/sounds/dzin.h build/sounds/bump.h build/sounds/spoon.h build/sounds/spoon2.h build/sounds/click.h
 
-build-sdl: sounds main.c sdl2/renderer.h sdl2/sound.h
+build-sdl: sounds main.c sdl2/renderer.c sdl2/sound.h
 	mkdir -p build
-	gcc -Wall main.c -lSDL2 -lSDL2main -o ./build/sdl_tetris
+	gcc -Wall main.c sdl2/renderer.c -lSDL2 -lSDL2main -o ./build/sdl_tetris
 
 build-avr: sounds main.c avr/renderer.h avr/sound.h
 	mkdir -p build

@@ -1,9 +1,19 @@
 #include <time.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "../build/sounds/dzin.h"
+#include "../build/sounds/bump.h"
+#include "../build/sounds/spoon.h"
+#include "../build/sounds/spoon2.h"
+#include "../build/sounds/click.h"
 
 #include "../renderer.h"
 #include "../screen.h"
+#include "../sounds.h"
+#include "../events.h"
 #include "../colours.h"
 
 #define BOARD_SIZE_X 10 

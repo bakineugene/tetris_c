@@ -3,11 +3,6 @@
 #include <stdio.h>
 
 #include "../sounds.h"
-#include "../build/sounds/dzin.h"
-#include "../build/sounds/bump.h"
-#include "../build/sounds/spoon.h"
-#include "../build/sounds/spoon2.h"
-#include "../build/sounds/click.h"
 
 const int SAMPLE_RATE = 8000;
 const int BUFFER_SIZE = 512;
