@@ -23,13 +23,13 @@ build/sounds/click.h: sounds/click.wav
 
 sounds: build/sounds/dzin.h build/sounds/bump.h build/sounds/spoon.h build/sounds/spoon2.h build/sounds/click.h
 
-build-sdl: sounds main.c tetris/tetris.c sdl2/renderer.c sdl2/sound.h
+build-sdl: sounds main.c tetris/colours.c tetris/tetris.c sdl2/renderer.c sdl2/sound.h
 	mkdir -p build
-	gcc -Wall main.c tetris/tetris.c sdl2/renderer.c -lSDL2 -lSDL2main -o ./build/sdl_tetris
+	gcc -Wall main.c tetris/colours.c tetris/tetris.c sdl2/renderer.c -lSDL2 -lSDL2main -o ./build/sdl_tetris
 
-build-avr: sounds main.c tetris/tetris.c avr/renderer.c avr/sound.h
+build-avr: sounds main.c tetris/colours.c tetris/tetris.c avr/renderer.c avr/sound.h
 	mkdir -p build
-	avr-gcc main.c tetris/tetris.c avr/renderer.c -o ./build/main.elf -mmcu=atmega328p -DF_CPU=16000000UL -Os
+	avr-gcc main.c tetris/colours.c tetris/tetris.c avr/renderer.c -o ./build/main.elf -mmcu=atmega328p -DF_CPU=16000000UL -Os
 	avr-objcopy ./build/main.elf -O ihex ./build/main.hex
 
 upload-avr: build-avr
