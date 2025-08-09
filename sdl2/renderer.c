@@ -8,7 +8,6 @@
 #include "renderer.h"
 #include "../screen.h"
 #include "../colours.h"
-#include "../renderer.h"
 #include "../events.h"
 #include "sound.h"
 
