@@ -1,5 +1,9 @@
 #pragma once
 
+#include <stdbool.h>
+#include <stdlib.h>
+
+#include "position.h"
 #include "board.h"
 #include "colours.h"
 

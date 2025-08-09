@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdlib.h>
+
 #include "../colours.h"
 
 #define NUMBER_OF_COLOURS 7
