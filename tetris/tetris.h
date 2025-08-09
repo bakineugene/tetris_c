@@ -14,9 +14,9 @@
 #include "../screen.h"
 #include "../sounds.h"
 #include "../events.h"
-#include "../colours.h"
 
 #include "position.h"
+#include "colours.h"
 
 #define BOARD_SIZE_X 10 
 #define BOARD_SIZE_Y 24 
@@ -36,6 +36,32 @@ typedef struct Piece {
     uint8_t moving_center;
     Position definition[4];
 } Piece;
+
+int calculate_rotation_x_shift(
+    Position position,
+    uint8_t rotation,
+    Piece piece
+) {
+    int shift = 0;
+    for (int i = 0; i < piece.size; ++i) {
+        Position rotated = position_rotate(
+            *(piece.definition + i),
+            rotation,
+            piece.moving_center
+        );
+
+        Position final = position_sum(rotated, position);
+        if (final.x >= BOARD_SIZE_X) {
+            int new_shift = BOARD_SIZE_X - final.x - 1;
+            if (new_shift < shift) shift = new_shift;
+        }
+        if (final.x < 0) {
+            int new_shift = -final.x;
+            if (new_shift > shift) shift = new_shift;
+        }
+    }
+    return shift;
+}
 
 typedef struct PieceDrawDef {
     Piece piece;
@@ -70,9 +96,6 @@ void copy_screen_to_board(Tetris* game) {
     }
 }
 
-#define NUMBER_OF_COLOURS 7
-enum Colour colours[NUMBER_OF_COLOURS] = {COLOUR_RED, COLOUR_ORANGE, COLOUR_YELLOW, COLOUR_GREEN, COLOUR_BLUE, COLOUR_DEEP_BLUE, COLOUR_VIOLET}; 
-
 #define NUMBER_OF_PIECES 7
 #define DEFAULT_ROTATION 0
 
@@ -85,32 +108,6 @@ Piece pieces[NUMBER_OF_PIECES] = {
     {4, false, {{0, 0}, {1, 0}, {-1, 0}, {0, 1}}},
     {4, false, {{0, 0}, {-1, 0}, {0, 1}, {1, 1}}}
 };
-
-int calculate_rotation_x_shift(
-    Position position,
-    uint8_t rotation,
-    Piece piece
-) {
-    int shift = 0;
-    for (int i = 0; i < piece.size; ++i) {
-        Position rotated = position_rotate(
-            *(piece.definition + i),
-            rotation,
-            piece.moving_center
-        );
-
-        Position final = position_sum(rotated, position);
-        if (final.x >= BOARD_SIZE_X) {
-            int new_shift = BOARD_SIZE_X - final.x - 1;
-            if (new_shift < shift) shift = new_shift;
-        }
-        if (final.x < 0) {
-            int new_shift = -final.x;
-            if (new_shift > shift) shift = new_shift;
-        }
-    }
-    return shift;
-}
 
 bool can_place_piece(
     Tetris* game,
@@ -180,7 +177,7 @@ PieceDrawDef select_next_piece(Tetris *game) {
         pieces[rand() % NUMBER_OF_PIECES],
         { .x = 13, .y = 2 },
         DEFAULT_ROTATION,
-        colours[rand() % NUMBER_OF_COLOURS]
+        get_random_colour()
     };
     game->next_piece = new_piece;
     erase_prediction(game);
