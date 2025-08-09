@@ -49,6 +49,9 @@ void copy_screen_to_board(Tetris* game) {
 
 #define PREDICTION_SIZE 6
 
+/**
+ * Erase area for prediction piece (next piece to be played)
+ */
 void erase_prediction(Tetris* game) {
     for (int x = BOARD_SIZE_X + 1; x < SCREEN_X; ++x) {
         for (int y = 0; y < PREDICTION_SIZE; ++y) {
@@ -57,6 +60,11 @@ void erase_prediction(Tetris* game) {
     }
 }
 
+/**
+ * Draws piece on screen
+ * First board is copied on screen
+ * Then new piece definition is drawn and rendered
+ */
 void draw_piece(
     Tetris* game,
     PieceDrawDef draw_definition
@@ -79,6 +87,10 @@ void draw_piece(
     game->renderer.render((uint8_t *) game->screen);
 }
 
+/**
+ * New random piece is selected and drawn into prediction area
+ * Prediction piece is set as current piece
+ */
 PieceDrawDef select_next_piece(Tetris *game) {
     PieceDrawDef result_piece = game->next_piece;
     PieceDrawDef new_piece = {
@@ -96,6 +108,9 @@ PieceDrawDef select_next_piece(Tetris *game) {
     return game->piece = result_piece;
 }
 
+/**
+ * Game over animation (fill screen and remove all the pieces)
+ */
 void game_over(Tetris* game) {
     for (int y = 0; y < BOARD_SIZE_Y; ++y) {
         for (int x = 0; x < BOARD_SIZE_X; ++x) {
@@ -116,6 +131,9 @@ void game_over(Tetris* game) {
     }
 }
 
+/**
+ * Checks the game board for full rows and removes them
+ */
 void check_board(Tetris* game) {
     int by = BOARD_SIZE_Y - 1;
     for (int y = BOARD_SIZE_Y - 1; y > 0; --y) {
@@ -135,6 +153,9 @@ void check_board(Tetris* game) {
     game->renderer.render((uint8_t *) game->screen);
 }
 
+/**
+ * Changes current piece rotation to next one if possible
+ */
 bool piece_change_rotation(Tetris* game, uint8_t increment) {
     uint8_t new_rotation = game->piece.rotation + increment;
     if (new_rotation > 3) new_rotation = 0;
@@ -153,6 +174,9 @@ bool piece_change_rotation(Tetris* game, uint8_t increment) {
     return false;
 }
 
+/**
+ * Increments position of current piece if possible
+ */
 bool piece_change_position(Tetris* game, Position increment) {
     Position new_position = position_sum(game->piece.position, increment);
     if (can_place_piece(game->board, new_position, game->piece.rotation, game->piece.piece)) {
@@ -163,6 +187,11 @@ bool piece_change_position(Tetris* game, Position increment) {
     return false;
 }
 
+/**
+ * Moves piece one position down if possible
+ * If not - generates next piece if possible
+ * If not - starts new game (game over animation)
+ */
 bool piece_down(Tetris* game) {
     if (piece_change_position(game, (Position) {.x = 0, .y = 1})) {
         return true;
@@ -177,6 +206,9 @@ bool piece_down(Tetris* game) {
     return false;
 }
 
+/**
+ * Starts game cycle - reacts for events
+ */
 void game_start_internal(Tetris* game) {
     srand(time(NULL));
     game->running = true;
@@ -236,6 +268,9 @@ void game_start_internal(Tetris* game) {
     }
 }
 
+/**
+ * Initializes game state
+ */
 Tetris new_tetris(Renderer renderer) {
     Tetris game;
     game.time = 0;
