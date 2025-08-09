@@ -11,3 +11,5 @@ typedef struct Renderer {
     void (*play_sound)(Sound sound);
 } Renderer;
 
+Renderer new_renderer(void);
+
