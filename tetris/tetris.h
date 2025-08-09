@@ -16,6 +16,8 @@
 #include "../events.h"
 #include "../colours.h"
 
+#include "position.h"
+
 #define BOARD_SIZE_X 10 
 #define BOARD_SIZE_Y 24 
 
@@ -28,11 +30,6 @@
 #define TETRIS_SOUND_TURN SOUND_SPOON
 
 #define DEFAULT_ROTATION 0
-
-typedef struct Position {
-    uint8_t x;
-    uint8_t y;
-} Position;
 
 typedef struct Piece {
     uint8_t size;
@@ -88,60 +85,6 @@ Piece pieces[NUMBER_OF_PIECES] = {
     {4, false, {{0, 0}, {1, 0}, {-1, 0}, {0, 1}}},
     {4, false, {{0, 0}, {-1, 0}, {0, 1}, {1, 1}}}
 };
-
-Position position_sum(
-    Position a,
-    Position b
-) {
-    Position result = {
-        .x = a.x + b.x,
-        .y = a.y + b.y
-    };
-    return result;
-}
-
-Position position_rotate(
-    Position position,
-    uint8_t rotation,
-    uint8_t moving_center
-) {
-    Position result;
-
-    switch(rotation) {
-        case 0: {
-            result.x = position.x;  
-            result.y = position.y;
-            break;
-        }
-        case 1: {
-            result.x = -position.y;  
-            result.y = position.x;
-            if (moving_center) {
-                result.x += 1;
-            }
-            break;
-        }
-        case 2: {
-            result.x = -position.x;  
-            result.y = -position.y;
-            if (moving_center) {
-                result.x += 1;
-                result.y += 1;
-            }
-            break;
-        }
-        case 3: {
-            result.x = position.y;  
-            result.y = -position.x;
-            if (moving_center) {
-                result.y += 1;
-            }
-            break;
-        }
-    }
-
-    return result;
-}
 
 int calculate_rotation_x_shift(
     Position position,
