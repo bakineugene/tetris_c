@@ -10,6 +10,8 @@ typedef struct Tetris {
     Renderer renderer;
     PieceDrawDef next_piece;
     PieceDrawDef piece;
+    uint8_t difficulty;
+    uint8_t score;
     uint8_t board[SCREEN_X][SCREEN_Y];
     uint8_t screen[SCREEN_X][SCREEN_Y];
 } Tetris;

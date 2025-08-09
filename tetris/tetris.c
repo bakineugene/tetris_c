@@ -131,6 +131,17 @@ void game_over(Tetris* game) {
     }
 }
 
+#define MAX_SCORE 17
+#define DIFFICULTY_X 14
+#define SCORE_X 12
+
+void draw_score_and_difficulty(Tetris* game) {
+    for (int i = 1; i < MAX_SCORE; ++i) {
+        game->screen[DIFFICULTY_X][SCREEN_Y - i] = game->difficulty >= i ? COLOUR_RED : COLOUR_EMPTY;
+        game->screen[SCORE_X][SCREEN_Y - i] = game->score >= i ? COLOUR_BLUE : COLOUR_EMPTY;
+    }
+}
+
 /**
  * Checks the game board for full rows and removes them
  */
@@ -145,10 +156,18 @@ void check_board(Tetris* game) {
         if (!row_is_full) {
             --by;
         } else {
+            game->score += 1;
             game->renderer.play_sound(TETRIS_SOUND_CLEAR_ROW);
             game->renderer.delay(TETRIS_SOUND_CLEAR_ROW.length / 16);
         }
     }
+    if (game->score >= MAX_SCORE) {
+        game->score -= MAX_SCORE;
+        if (game->difficulty < MAX_SCORE) {
+            game->difficulty += 1;
+        }
+    }
+    draw_score_and_difficulty(game);
     copy_board_to_screen(game);
     game->renderer.render((uint8_t *) game->screen);
 }
@@ -206,12 +225,16 @@ bool piece_down(Tetris* game) {
     return false;
 }
 
+#define TIME_INCREMENT 10
+#define TIME_FOR_PIECE_DOWN 800
+
 /**
  * Starts game cycle - reacts for events
  */
 void game_start_internal(Tetris* game) {
     srand(time(NULL));
     game->running = true;
+    draw_score_and_difficulty(game);
     while (game->running) {
         enum Event event = EVENT_EMPTY;
         do {
@@ -258,13 +281,13 @@ void game_start_internal(Tetris* game) {
             }
         } while (event != EVENT_EMPTY);
 
-        if (game->time == 300) {
+        if (game->time >= TIME_FOR_PIECE_DOWN * (1 - (1.0 * game->difficulty) / MAX_SCORE )) {
             game->time = 0;
             piece_down(game);
         }
 
-        game->time += 10;
-        game->renderer.delay(10);
+        game->time += TIME_INCREMENT;
+        game->renderer.delay(TIME_INCREMENT);
     }
 }
 
@@ -274,6 +297,8 @@ void game_start_internal(Tetris* game) {
 Tetris new_tetris(Renderer renderer) {
     Tetris game;
     game.time = 0;
+    game.difficulty = 0;
+    game.score = 0;
     game.renderer = renderer;
 
     for (int x = 0; x < SCREEN_X; ++x) {
