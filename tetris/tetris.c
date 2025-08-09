@@ -96,7 +96,7 @@ void draw_piece(
 PieceDrawDef select_next_piece(Tetris *game) {
     PieceDrawDef result_piece = game->next_piece;
     PieceDrawDef new_piece = {
-        pieces[rand() % NUMBER_OF_PIECES],
+        get_random_piece(),
         { .x = 13, .y = 2 },
         DEFAULT_ROTATION,
         get_random_colour()
