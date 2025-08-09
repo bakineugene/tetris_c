@@ -52,6 +52,36 @@ int calculate_rotation_x_shift(
     return shift;
 }
 
+bool can_place_piece(
+    uint8_t board[SCREEN_X][SCREEN_Y],
+    Position position,
+    uint8_t rotation,
+    Piece piece
+) {
+    for (int i = 0; i < piece.size; ++i) {
+        Position rotated = position_rotate(
+            *(piece.definition + i),
+            rotation,
+            piece.moving_center
+        );
+
+        Position final = position_sum(rotated, position);
+        if (final.x >= BOARD_SIZE_X) {
+            return false;
+        }
+        if (final.x < 0) {
+            return false;
+        }
+        if (final.y >= BOARD_SIZE_Y) {
+            return false;
+        }
+        if (board[final.x][final.y]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 typedef struct PieceDrawDef {
     Piece piece;
     Position position;

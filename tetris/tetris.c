@@ -47,36 +47,6 @@ void copy_screen_to_board(Tetris* game) {
     }
 }
 
-bool can_place_piece(
-    Tetris* game,
-    Position position,
-    uint8_t rotation,
-    Piece piece
-) {
-    for (int i = 0; i < piece.size; ++i) {
-        Position rotated = position_rotate(
-            *(piece.definition + i),
-            rotation,
-            piece.moving_center
-        );
-
-        Position final = position_sum(rotated, position);
-        if (final.x >= BOARD_SIZE_X) {
-            return false;
-        }
-        if (final.x < 0) {
-            return false;
-        }
-        if (final.y >= BOARD_SIZE_Y) {
-            return false;
-        }
-        if (game->board[final.x][final.y]) {
-            return false;
-        }
-    }
-    return true;
-}
-
 #define PREDICTION_SIZE 6
 
 void erase_prediction(Tetris* game) {
@@ -174,7 +144,7 @@ bool piece_change_rotation(Tetris* game, uint8_t increment) {
         game->piece.piece
     );
     Position new_position = position_sum(game->piece.position, (Position) {.x = shift, .y = 0});
-    if (can_place_piece(game, new_position, new_rotation, game->piece.piece)) {
+    if (can_place_piece(game->board, new_position, new_rotation, game->piece.piece)) {
         game->piece.position = new_position;
         game->piece.rotation = new_rotation;
         draw_piece(game, game->piece);
@@ -185,7 +155,7 @@ bool piece_change_rotation(Tetris* game, uint8_t increment) {
 
 bool piece_change_position(Tetris* game, Position increment) {
     Position new_position = position_sum(game->piece.position, increment);
-    if (can_place_piece(game, new_position, game->piece.rotation, game->piece.piece)) {
+    if (can_place_piece(game->board, new_position, game->piece.rotation, game->piece.piece)) {
         game->piece.position = new_position;
         draw_piece(game, game->piece);
         return true;
