@@ -311,6 +311,7 @@ bool piece_down(Tetris* game) {
 }
 
 void game_start(Tetris* game) {
+    srand(time(NULL));
     game->running = true;
     while (game->running) {
         enum Event event = EVENT_EMPTY;
