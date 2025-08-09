@@ -1,0 +1,61 @@
+#pragma once
+
+#include "board.h"
+#include "colours.h"
+
+#define DEFAULT_ROTATION 0
+#define NUMBER_OF_PIECES 7
+
+typedef struct Piece {
+    uint8_t size;
+    uint8_t moving_center;
+    Position definition[4];
+} Piece;
+
+Piece pieces[NUMBER_OF_PIECES] = {
+    {4, true, {{0, -1}, {0, 0}, {0, 1}, {0, 2}}},
+    {4, false, {{0, -1}, {0, 0}, {0, 1}, {-1, 1}}},
+    {4, false, {{0, -1}, {0, 0}, {0, 1}, {1, 1}}},
+    {4, true, {{0, 0}, {1, 0}, {1, 1}, {0, 1}}},
+    {4, false, {{0, 0}, {1, 0}, {0, 1}, {-1, 1}}},
+    {4, false, {{0, 0}, {1, 0}, {-1, 0}, {0, 1}}},
+    {4, false, {{0, 0}, {-1, 0}, {0, 1}, {1, 1}}}
+};
+
+int calculate_rotation_x_shift(
+    Position position,
+    uint8_t rotation,
+    Piece piece
+) {
+    int shift = 0;
+    for (int i = 0; i < piece.size; ++i) {
+        Position rotated = position_rotate(
+            *(piece.definition + i),
+            rotation,
+            piece.moving_center
+        );
+
+        Position final = position_sum(rotated, position);
+        if (final.x >= BOARD_SIZE_X) {
+            int new_shift = BOARD_SIZE_X - final.x - 1;
+            if (new_shift < shift) shift = new_shift;
+        }
+        if (final.x < 0) {
+            int new_shift = -final.x;
+            if (new_shift > shift) shift = new_shift;
+        }
+    }
+    return shift;
+}
+
+typedef struct PieceDrawDef {
+    Piece piece;
+    Position position;
+    uint8_t rotation;
+    enum Colour colour;
+} PieceDrawDef;
+
+Piece get_random_piece() {
+    return pieces[rand() % NUMBER_OF_PIECES];
+}
+
