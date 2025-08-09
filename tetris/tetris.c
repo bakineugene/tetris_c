@@ -31,6 +31,8 @@
 #define TETRIS_SOUND_PLACE SOUND_CLICK
 #define TETRIS_SOUND_TURN SOUND_SPOON
 
+void draw_score_and_difficulty(Tetris* game);
+
 void copy_board_to_screen(Tetris* game) {
     for (int x = 0; x < BOARD_SIZE_X; ++x) {
         for (int y = 0; y < BOARD_SIZE_Y; ++y) {
@@ -112,6 +114,9 @@ PieceDrawDef select_next_piece(Tetris *game) {
  * Game over animation (fill screen and remove all the pieces)
  */
 void game_over(Tetris* game) {
+    game->difficulty = 0;
+    game->score = 0;
+    draw_score_and_difficulty(game);
     for (int y = 0; y < BOARD_SIZE_Y; ++y) {
         for (int x = 0; x < BOARD_SIZE_X; ++x) {
             game->screen[x][y] = COLOUR_RED;
