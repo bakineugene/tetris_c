@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     Renderer renderer = new_renderer();
     renderer.init();
 
-    Tetris game = game_new();
+    Tetris game = new_tetris(renderer);
 
     game_start(&game);
 

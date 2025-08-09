@@ -2,8 +2,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "./../screen.h"
-#include "./../colours.h"
+#include "../renderer.h"
+#include "../screen.h"
+#include "../colours.h"
 
 #define BOARD_SIZE_X 10 
 #define BOARD_SIZE_Y 24 
@@ -39,6 +40,7 @@ typedef struct PieceDrawDef {
 typedef struct Tetris {
     int time;
     bool running;
+    Renderer renderer;
     PieceDrawDef next_piece;
     PieceDrawDef piece;
     uint8_t board[SCREEN_X][SCREEN_Y];
@@ -216,7 +218,7 @@ void draw_piece(
             }
         }
     }
-    renderer_render((uint8_t *) game->screen);
+    game->renderer.render((uint8_t *) game->screen);
 }
 
 PieceDrawDef select_next_piece(Tetris *game) {
@@ -242,8 +244,8 @@ void game_over(Tetris* game) {
             game->screen[x][y] = COLOUR_RED;
         }
 
-        renderer_render((uint8_t *) game->screen);
-        renderer_delay(10);
+        game->renderer.render((uint8_t *) game->screen);
+        game->renderer.delay(10);
     }
 
     for (int y = SCREEN_Y - 1; y >= 0; --y) {
@@ -251,8 +253,8 @@ void game_over(Tetris* game) {
             game->screen[x][y] = game->board[x][y] = 0;
         }
 
-        renderer_render((uint8_t *) game->screen);
-        renderer_delay(10);
+        game->renderer.render((uint8_t *) game->screen);
+        game->renderer.delay(10);
     }
 }
 
@@ -267,12 +269,12 @@ void check_board(Tetris* game) {
         if (!row_is_full) {
             --by;
         } else {
-            renderer_play_sound(TETRIS_SOUND_CLEAR_ROW);
-            renderer_delay(TETRIS_SOUND_CLEAR_ROW.length / 16);
+            game->renderer.play_sound(TETRIS_SOUND_CLEAR_ROW);
+            game->renderer.delay(TETRIS_SOUND_CLEAR_ROW.length / 16);
         }
     }
     copy_board_to_screen(game);
-    renderer_render((uint8_t *) game->screen);
+    game->renderer.render((uint8_t *) game->screen);
 }
 
 bool piece_change_rotation(Tetris* game, uint8_t increment) {
@@ -323,7 +325,7 @@ void game_start(Tetris* game) {
     while (game->running) {
         enum Event event = EVENT_EMPTY;
         do {
-            event = renderer_get_event();
+            event = game->renderer.get_event();
             switch(event) {
                 case EVENT_EXIT: {
                     game->running = false;
@@ -331,32 +333,32 @@ void game_start(Tetris* game) {
                 }
                 case EVENT_LEFT: {
                     if (piece_change_position(game, (Position) {.x = -1, .y = 0})) {
-                        renderer_play_sound(TETRIS_SOUND_MOVE);
+                        game->renderer.play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_RIGHT: {
                     if (piece_change_position(game, (Position) {.x = 1, .y = 0})) {
-                        renderer_play_sound(TETRIS_SOUND_MOVE);
+                        game->renderer.play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_DOWN: {
                     if (piece_down(game)) {
-                        renderer_play_sound(TETRIS_SOUND_MOVE);
+                        game->renderer.play_sound(TETRIS_SOUND_MOVE);
                     }
                     break;
                 }
                 case EVENT_UP: {
-                    while (piece_down(game)) { renderer_delay(12); } 
-                    renderer_play_sound(TETRIS_SOUND_PLACE);
-                    renderer_delay(200);
+                    while (piece_down(game)) { game->renderer.delay(12); } 
+                    game->renderer.play_sound(TETRIS_SOUND_PLACE);
+                    game->renderer.delay(200);
                     break;
                 }
                 case EVENT_SPACE: {
                     if (piece_change_rotation(game, 1)) {
-                        renderer_play_sound(TETRIS_SOUND_TURN);
-                        renderer_delay(200);
+                        game->renderer.play_sound(TETRIS_SOUND_TURN);
+                        game->renderer.delay(200);
                     }
                     break;
                 }
@@ -372,13 +374,14 @@ void game_start(Tetris* game) {
         }
 
         game->time += 10;
-        renderer_delay(10);
+        game->renderer.delay(10);
     }
 }
 
-Tetris game_new() {
+Tetris new_tetris(Renderer renderer) {
     Tetris game;
     game.time = 0;
+    game.renderer = renderer;
 
     for (int x = 0; x < SCREEN_X; ++x) {
         for (int y = 0; y < SCREEN_Y; ++y) {

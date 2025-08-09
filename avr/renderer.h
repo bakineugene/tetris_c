@@ -215,6 +215,7 @@ Renderer new_renderer() {
     renderer.render = renderer_render;
     renderer.delay = renderer_delay;
     renderer.destroy = renderer_destroy;
+    renderer.play_sound = renderer_play_sound;
 
     return renderer;
 }
