@@ -1,9 +1,12 @@
-#include "./../events.h"
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 
+#include "../screen.h"
+#include "../colours.h"
+#include "../renderer.h"
+#include "../events.h"
 #include "sound.h"
 
 #define START_DATA_TRANSACTION()    PORTB &= ~(1 << PB2)
@@ -140,7 +143,7 @@ int renderer_init(void) {
 }
 
 const uint8_t bit_set = 0b00000001;
-void renderer_render(char *a) {
+void renderer_render(uint8_t *screen) {
     for (int i = 0; i < NUM_DEVICES; ++i) {
         uint8_t bit = 0b00000000;
         uint8_t dim_bit = 0b00000000;
@@ -176,11 +179,11 @@ void renderer_render(char *a) {
                     y = MATRIX_SIDE * 3 - row - 1;
                 }
 
-                if (*(a + x * SCREEN_Y + y) != 0) {
+                if (*(screen + x * SCREEN_Y + y) != 0) {
                     bit |= bit_set;
                     dim_bit |= bit_set;
                 }
-                if (*(a + x * SCREEN_Y + y) == COLOUR_WALL) {
+                if (*(screen + x * SCREEN_Y + y) == COLOUR_WALL) {
                     dim_bit = dim_bit &~ bit_set;
                 }
             }
@@ -203,3 +206,16 @@ void renderer_delay(int delay) {
 void renderer_destroy() {
 
 }
+
+Renderer new_renderer() {
+    Renderer renderer;
+
+    renderer.get_event = renderer_get_event;
+    renderer.init = renderer_init;
+    renderer.render = renderer_render;
+    renderer.delay = renderer_delay;
+    renderer.destroy = renderer_destroy;
+
+    return renderer;
+}
+

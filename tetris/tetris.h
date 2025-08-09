@@ -1,3 +1,10 @@
+#include <time.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "./../screen.h"
+#include "./../colours.h"
+
 #define BOARD_SIZE_X 10 
 #define BOARD_SIZE_Y 24 
 

@@ -1,10 +1,3 @@
-#include <time.h>
-#include <stdbool.h>
-#include <stdint.h>
-
-#include "screen.h"
-#include "colours.h"
-
 #if defined(__AVR__)
 #include "avr/renderer.h"
 #else
@@ -14,13 +7,14 @@
 #include "tetris/tetris.h"
 
 int main(int argc, char** argv) {
-    renderer_init();
+    Renderer renderer = new_renderer();
+    renderer.init();
 
     Tetris game = game_new();
 
     game_start(&game);
 
-    renderer_destroy();
+    renderer.destroy();
 
     return 0;
 }

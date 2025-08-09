@@ -1,3 +1,5 @@
+#pragma once
+
 enum Colour {
     COLOUR_RED = 2,
     COLOUR_ORANGE = 3,

@@ -2,11 +2,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
+
+#include "../screen.h"
+#include "../colours.h"
+#include "../renderer.h"
 #include "../events.h"
 #include "sound.h"
-
-#define SDL_MAIN_HANDLED
-#include "SDL2/SDL.h"
 
 #define WINDOW_TITLE "Tetris on SDL2"
 
@@ -183,3 +186,16 @@ void renderer_destroy() {
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
+
+Renderer new_renderer() {
+    Renderer renderer;
+
+    renderer.get_event = renderer_get_event;
+    renderer.init = renderer_init;
+    renderer.render = renderer_render;
+    renderer.delay = renderer_delay;
+    renderer.destroy = renderer_destroy;
+
+    return renderer;
+}
+
