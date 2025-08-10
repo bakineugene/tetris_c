@@ -138,12 +138,14 @@ void game_over(Tetris* game) {
 
 #define MAX_SCORE 17
 #define DIFFICULTY_X 14
-#define SCORE_X 12
+#define SCORE_X 11
 
 void draw_score_and_difficulty(Tetris* game) {
     for (int i = 1; i < MAX_SCORE; ++i) {
         game->screen[DIFFICULTY_X][SCREEN_Y - i] = game->difficulty >= i ? COLOUR_RED : COLOUR_EMPTY;
-        game->screen[SCORE_X][SCREEN_Y - i] = game->score >= i ? COLOUR_BLUE : COLOUR_EMPTY;
+        game->screen[DIFFICULTY_X + 1][SCREEN_Y - i] = game->difficulty >= i ? COLOUR_RED : COLOUR_EMPTY;
+        game->screen[SCORE_X][SCREEN_Y - i] = game->score >= i ? COLOUR_DEEP_BLUE : COLOUR_EMPTY;
+        game->screen[SCORE_X + 1][SCREEN_Y - i] = game->score >= i ? COLOUR_DEEP_BLUE : COLOUR_EMPTY;
     }
 }
 
@@ -315,6 +317,7 @@ Tetris new_tetris(Renderer renderer) {
 
     for (int y = 0; y < SCREEN_Y; ++y) {
         game.screen[BOARD_SIZE_X][y] = COLOUR_WALL;
+        game.screen[BOARD_SIZE_X + 3][y] = COLOUR_WALL;
     }
 
     for (int x = BOARD_SIZE_X; x < SCREEN_X; ++x) {
