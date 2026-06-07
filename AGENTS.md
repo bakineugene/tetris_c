@@ -137,6 +137,16 @@ make upload-avr   # Program via USBasp
 | `make build-avr` | Compile for AVR |
 | `make upload-avr` | Build + upload via USBasp |
 
+## Display
+
+### Fullscreen
+
+- **F11** toggles fullscreen/window mode (desktop resolution)
+- Game starts in fullscreen on desktop resolution
+- Black background surrounding the game zone
+- 1px white border around the 16×24 game area (board + score + prediction)
+- Window resize handled automatically, cell size recalculated from window height
+
 ## Key Conventions
 
 - **No platform specifics in `tetris/`** — game logic must not `#include` SDL or AVR headers

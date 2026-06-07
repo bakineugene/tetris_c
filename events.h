@@ -5,5 +5,6 @@ enum Event {
     EVENT_RIGHT,
     EVENT_UP,
     EVENT_DOWN,
-    EVENT_SPACE
+    EVENT_SPACE,
+    EVENT_FULLSCREEN
 };
