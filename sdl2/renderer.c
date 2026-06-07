@@ -55,18 +55,25 @@ enum Event renderer_get_event() {
     return EVENT_EMPTY;
 }
 
-SDL_Texture* wall_texture;
-void init_textures(void) {
-    SDL_Surface* surface = SDL_LoadBMP("./sdl2/wall.bmp");
-    if (!surface) {
-        printf("Failed to load BMP: %s\n", SDL_GetError());
-    }
+/* wall.bmp embedded via linker: ld -r -b binary → wall_bmp.o */
+extern const char _binary_sdl2_wall_bmp_start[];
+extern const char _binary_sdl2_wall_bmp_end[];
 
-    wall_texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
-    if (!wall_texture) {
-        printf("Failed to create texture: %s\n", SDL_GetError());
-    }
+SDL_Texture* wall_texture;
+
+void init_textures(void) {
+	size_t bmp_size = (size_t)(_binary_sdl2_wall_bmp_end - _binary_sdl2_wall_bmp_start);
+	SDL_RWops* rw = SDL_RWFromMem((void*)_binary_sdl2_wall_bmp_start, (int)bmp_size);
+	SDL_Surface* surface = SDL_LoadBMP_RW(rw, 1); /* autoclose rw */
+	if (!surface) {
+		fprintf(stderr, "Failed to load BMP: %s\n", SDL_GetError());
+	}
+
+	wall_texture = SDL_CreateTextureFromSurface(renderer, surface);
+	SDL_FreeSurface(surface);
+	if (!wall_texture) {
+		fprintf(stderr, "Failed to create texture: %s\n", SDL_GetError());
+	}
 }
 
 int side_size;

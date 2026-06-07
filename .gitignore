@@ -1,2 +1,5 @@
 build
 *.swp
+*.exe
+_deps/
+sdl2/wall.bmp
