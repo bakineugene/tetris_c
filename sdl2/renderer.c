@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-
 #define SDL_MAIN_HANDLED
+#include <stdbool.h>
 #include <SDL2/SDL.h>
 
 #include "renderer.h"
@@ -15,19 +12,19 @@
 
 static SDL_Window* window;
 static SDL_Renderer* renderer;
-static SDL_Event event;
-
+static SDL_GameController* game_controller = NULL;
 int side_size;
 
 /* ── event polling ── */
 
 enum Event renderer_get_event(void) {
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+        switch (e.type) {
         case SDL_QUIT:
             return EVENT_EXIT;
         case SDL_KEYDOWN:
-            switch (event.key.keysym.sym) {
+            switch (e.key.keysym.sym) {
             case SDLK_LEFT:             return EVENT_LEFT;
             case SDLK_RIGHT:            return EVENT_RIGHT;
             case SDLK_DOWN:             return EVENT_DOWN;
@@ -48,6 +45,42 @@ enum Event renderer_get_event(void) {
             break;
         }
     }
+
+// Controller buttons (time gated)
+    static Uint32 last_controller_event = 0;
+    static const int controller_repeat_ms = 70;
+    if (game_controller) {
+        Uint32 now = SDL_GetTicks();
+        if (now - last_controller_event < controller_repeat_ms)
+            // rejected rate limited
+            return EVENT_EMPTY;
+        
+        if (SDL_GameControllerGetButton(game_controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT)) {
+            last_controller_event = now;
+            return EVENT_LEFT;
+        }
+        if (SDL_GameControllerGetButton(game_controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT)) {
+            last_controller_event = now;
+            return EVENT_RIGHT;
+        }
+        if (SDL_GameControllerGetButton(game_controller, SDL_CONTROLLER_BUTTON_DPAD_UP)) {
+            last_controller_event = now;
+            return EVENT_UP;
+        }
+        if (SDL_GameControllerGetButton(game_controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN)) {
+            last_controller_event = now;
+            return EVENT_DOWN;
+        }
+        if (SDL_GameControllerGetButton(game_controller, SDL_CONTROLLER_BUTTON_A)) {
+            last_controller_event = now;
+            return EVENT_SPACE;
+        }
+        if (SDL_GameControllerGetButton(game_controller, SDL_CONTROLLER_BUTTON_B)) {
+            last_controller_event = now;
+            return EVENT_DOWN;
+        }
+    }
+
     return EVENT_EMPTY;
 }
 
@@ -77,6 +110,18 @@ int renderer_init(void) {
         printf("Unable to initialize SDL: %s\n", SDL_GetError());
         return -1;
     }
+
+    // Init game controller subsystem
+    SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+    SDL_GameControllerAddMappingsFromFile(NULL);
+    if (SDL_WasInit(SDL_INIT_GAMECONTROLLER)) {
+        game_controller = SDL_GameControllerOpen(0);
+        if (game_controller)
+            printf("Controller connected\n");
+        else
+            printf("Controller open failed: %s\n", SDL_GetError());
+    }
+
     renderer_init_sound();
 
     SDL_DisplayMode dm;
@@ -206,7 +251,9 @@ void renderer_delay(int delay) {
 }
 
 void renderer_destroy(void) {
-    /* restore windowed before teardown */
+    SDL_GameControllerClose(game_controller);
+
+    // restore windowed before teardown
     if (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP)
         SDL_SetWindowFullscreen(window, 0);
 
